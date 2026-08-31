@@ -1,2 +1,2 @@
 [phases.setup]
-aptPkgs = ["libatomic1"]
+aptPkgs = ["libatomic1", "build-essential", "python3"]
