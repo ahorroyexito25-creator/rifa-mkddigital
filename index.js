@@ -17,39 +17,39 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
 });
 
-// 🗄️ Configuración de almacenamiento ultra-robusta con manejo de errores detallado
-let dbPath;
-let db;
+// 🗄️ Inicialización blindada y limpieza de bloqueos para volumen en la nube
+const primaryDir = '/data';
+if (!fs.existsSync(primaryDir)) {
+    fs.mkdirSync(primaryDir, { recursive: true });
+}
 
+const dbPath = path.join(primaryDir, 'rifa.db');
+const walPath = dbPath + '-wal';
+const shmPath = dbPath + '-shm';
+
+// Limpiar archivos temporales de bloqueo huérfanos que causan el crash en Railway
 try {
-    const primaryDir = '/data';
-    if (!fs.existsSync(primaryDir)) {
-        fs.mkdirSync(primaryDir, { recursive: true });
-    }
-    dbPath = path.join(primaryDir, 'rifa.db');
-    console.log(`✅ Intentando abrir base de datos en: ${dbPath}`);
-    
+    if (fs.existsSync(walPath)) fs.unlinkSync(walPath);
+    if (fs.existsSync(shmPath)) fs.unlinkSync(shmPath);
+    console.log('🧹 Archivos temporales de base de datos depurados.');
+} catch (e) {
+    console.log('⚠️ No se pudieron limpiar archivos temporales previos:', e.message);
+}
+
+let db;
+try {
+    console.log(`✅ Conectando a SQLite en: ${dbPath}`);
     db = new Database(dbPath);
-    db.pragma('journal_mode = WAL');
-    console.log(`✅ Base de datos iniciada correctamente.`);
+    // Usar modo DELETE en lugar de WAL para evitar fallos de concurrencia en volúmenes de red de la nube
+    db.pragma('journal_mode = DELETE');
+    console.log(`✅ Base de datos lista y estable.`);
 } catch (error) {
-    console.error(`❌ ERROR CRÍTICO EN BASE DE DATOS (/data):`, error.message);
-    console.error(error.stack);
-    
-    // Fallback de emergencia a directorio local si /data falla
-    try {
-        const fallbackDir = path.join(__dirname, 'data_local');
-        if (!fs.existsSync(fallbackDir)) {
-            fs.mkdirSync(fallbackDir, { recursive: true });
-        }
-        dbPath = path.join(fallbackDir, 'rifa.db');
-        console.log(`⚠️ Usando base de datos local de respaldo en: ${dbPath}`);
-        db = new Database(dbPath);
-        db.pragma('journal_mode = WAL');
-    } catch (fallbackError) {
-        console.error(`❌ ERROR CRÍTICO EN FALLBACK LOCAL:`, fallbackError.message);
-        process.exit(1);
+    console.error(`❌ Error crítico al abrir la base de datos. Recreando archivo limpio...`, error);
+    if (fs.existsSync(dbPath)) {
+        fs.renameSync(dbPath, `${dbPath}.bak.${Date.now()}`);
     }
+    db = new Database(dbPath);
+    db.pragma('journal_mode = DELETE');
 }
 
 // Crear tablas iniciales si no existen
