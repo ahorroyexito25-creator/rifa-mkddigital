@@ -17,27 +17,41 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
 });
 
-// 🗄️ Configuración robusta y segura de SQLite para volumen persistente en Railway (/data)
-const isProduction = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT || fs.existsSync('/data');
-const targetDir = isProduction ? '/data' : __dirname;
+// 🗄️ Configuración de almacenamiento ultra-robusta para Railway y entornos locales
+let dbPath;
+let db;
 
-// Asegurar de forma estricta que el directorio de la base de datos exista
-if (!fs.existsSync(targetDir)) {
-    try {
-        fs.mkdirSync(targetDir, { recursive: true });
-        console.log(`📁 Directorio creado exitosamente en: ${targetDir}`);
-    } catch (err) {
-        console.error(`❌ Error al crear el directorio ${targetDir}:`, err);
+try {
+    const primaryDir = '/data';
+    // Verificar si podemos usar y escribir en el volumen persistente de Railway
+    if (!fs.existsSync(primaryDir)) {
+        fs.mkdirSync(primaryDir, { recursive: true });
     }
+    // Prueba de escritura para validar permisos reales del volumen
+    const testFile = path.join(primaryDir, 'test-write.tmp');
+    fs.writeFileSync(testFile, 'ok');
+    fs.unlinkSync(testFile);
+
+    dbPath = path.join(primaryDir, 'rifa.db');
+    console.log(`✅ Usando volumen persistente en: ${dbPath}`);
+} catch (error) {
+    console.warn(`⚠️ No se pudo usar /data (${error.message}). Cambiando a almacenamiento local de respaldo...`);
+    const fallbackDir = path.join(__dirname, 'data_local');
+    if (!fs.existsSync(fallbackDir)) {
+        fs.mkdirSync(fallbackDir, { recursive: true });
+    }
+    dbPath = path.join(fallbackDir, 'rifa.db');
+    console.log(`📁 Usando base de datos local en: ${dbPath}`);
 }
 
-const dbPath = process.env.DB_PATH || path.join(targetDir, 'rifa.db');
-console.log(`📂 Conectando a la base de datos en: ${dbPath}`);
-
-const db = new Database(dbPath);
-
-// Habilitar modo WAL para evitar bloqueos de concurrencia en la nube
-db.pragma('journal_mode = WAL');
+// Inicializar la base de datos de forma segura
+try {
+    db = new Database(dbPath);
+    db.pragma('journal_mode = WAL');
+} catch (err) {
+    console.error(`❌ Error crítico al abrir la base de datos en ${dbPath}:`, err.message);
+    process.exit(1);
+}
 
 // Crear tablas iniciales si no existen
 db.exec(`
