@@ -17,8 +17,23 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
 });
 
-// 🗄️ Configuración robusta de SQLite para entorno local y producción (Railway)
-const dbPath = process.env.DB_PATH || (fs.existsSync('/data') ? path.join('/data', 'rifa.db') : path.join(__dirname, 'rifa.db'));
+// 🗄️ Configuración robusta y segura de SQLite para volumen persistente en Railway (/data)
+const isProduction = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT || fs.existsSync('/data');
+const targetDir = isProduction ? '/data' : __dirname;
+
+// Asegurar de forma estricta que el directorio de la base de datos exista
+if (!fs.existsSync(targetDir)) {
+    try {
+        fs.mkdirSync(targetDir, { recursive: true });
+        console.log(`📁 Directorio creado exitosamente en: ${targetDir}`);
+    } catch (err) {
+        console.error(`❌ Error al crear el directorio ${targetDir}:`, err);
+    }
+}
+
+const dbPath = process.env.DB_PATH || path.join(targetDir, 'rifa.db');
+console.log(`📂 Conectando a la base de datos en: ${dbPath}`);
+
 const db = new Database(dbPath);
 
 // Habilitar modo WAL para evitar bloqueos de concurrencia en la nube
