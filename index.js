@@ -5,7 +5,6 @@ import { fileURLToPath } from 'url';
 import Database from 'better-sqlite3';
 import fs from 'fs';
 
-// Capturar errores no controlados para mostrarlos en los logs de Railway en lugar de apagar el contenedor en silencio
 process.on('uncaughtException', (err) => {
     console.error('❌ EXCEPCIÓN NO CAPTURADA:', err);
 });
@@ -25,7 +24,6 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
 });
 
-// 🗄️ Inicialización blindada con manejo de errores de esquema y volumen
 let db;
 try {
     const primaryDir = '/data';
@@ -38,7 +36,6 @@ try {
     db = new Database(dbPath);
     db.pragma('journal_mode = DELETE');
 
-    // Creación de tablas e inserción protegidas dentro del bloque try
     db.exec(`
         CREATE TABLE IF NOT EXISTS config (
             id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -82,12 +79,11 @@ try {
     }
     console.log('✅ Base de datos inicializada y lista.');
 } catch (error) {
-    console.error('❌ ERROR FATAL AL INICIALIZAR LA BASE DE DATOS:', error);
-    process.exit(1);
+    console.error('❌ ERROR AL INICIALIZAR LA BASE DE DATOS:', error.message);
 }
 
-// ⏱️ Función para liberar reservas vencidas con control de errores
 function verificarReservasExpiradas() {
+    if (!db) return;
     try {
         const ahora = Date.now();
         const tiempoLimite = 5 * 60 * 1000;
@@ -106,7 +102,6 @@ function verificarReservasExpiradas() {
 
 setInterval(verificarReservasExpiradas, 30000);
 
-// Endpoints con bloques seguros de manejo de errores
 app.get('/api/config', (req, res) => {
     try {
         const row = db.prepare('SELECT loteria_nombre, sorteo_horario, precio_boleto, nequi_numero FROM config WHERE id = 1').get();
