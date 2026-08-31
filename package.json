@@ -6,7 +6,6 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "postinstall": "npm rebuild better-sqlite3",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -14,7 +13,6 @@
   "license": "ISC",
   "dependencies": {
     "@supabase/supabase-js": "^2.112.4",
-    "better-sqlite3": "^13.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1"

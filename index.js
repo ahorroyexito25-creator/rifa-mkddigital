@@ -2,15 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import Database from 'better-sqlite3';
 import fs from 'fs';
-
-process.on('uncaughtException', (err) => {
-    console.error('❌ EXCEPCIÓN NO CAPTURADA:', err);
-});
-process.on('unhandledRejection', (reason) => {
-    console.error('❌ PROMESA RECHAZADA NO CAPTURADA:', reason);
-});
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -24,88 +16,85 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
 });
 
-let db;
-try {
-    const primaryDir = '/data';
-    if (!fs.existsSync(primaryDir)) {
-        fs.mkdirSync(primaryDir, { recursive: true });
+// Ruta del archivo de base de datos en el volumen persistente
+const DATA_DIR = '/data';
+const DB_FILE = path.join(DATA_DIR, 'rifa.json');
+
+// Inicializar estructura de datos por defecto
+function cargarBD() {
+    try {
+        if (!fs.existsSync(DATA_DIR)) {
+            fs.mkdirSync(DATA_DIR, { recursive: true });
+        }
+        if (!fs.existsSync(DB_FILE)) {
+            const initialData = {
+                config: {
+                    id: 1,
+                    loteria_nombre: 'Chontico Noche',
+                    sorteo_horario: 'Lunes a Viernes - 7:00 p.m.',
+                    precio_boleto: 10000,
+                    nequi_numero: '3150000000',
+                    admin_password: '1234'
+                },
+                boletos: {}, // { "00": { estado, nombre, telefono, ciudad, email, loteria, horaSorteo, fechaReserva } }
+                historial: [] // Array de registros
+            };
+            fs.writeFileSync(DB_FILE, JSON.stringify(initialData, null, 2), 'utf8');
+            console.log('✅ Archivo de base de datos JSON creado exitosamente.');
+        }
+        const data = fs.readFileSync(DB_FILE, 'utf8');
+        return JSON.parse(data);
+    } catch (error) {
+        console.error('❌ Error al cargar la base de datos:', error);
+        return {
+            config: { id: 1, loteria_nombre: 'Chontico Noche', sorteo_horario: 'Lunes a Viernes - 7:00 p.m.', precio_boleto: 10000, nequi_numero: '3150000000', admin_password: '1234' },
+            boletos: {},
+            historial: []
+        };
     }
-    const dbPath = path.join(primaryDir, 'rifa.db');
-    console.log(`✅ Conectando a SQLite en: ${dbPath}`);
-    
-    db = new Database(dbPath);
-    db.pragma('journal_mode = DELETE');
-
-    db.exec(`
-        CREATE TABLE IF NOT EXISTS config (
-            id INTEGER PRIMARY KEY CHECK (id = 1),
-            loteria_nombre TEXT,
-            sorteo_horario TEXT,
-            precio_boleto INTEGER,
-            nequi_numero TEXT,
-            admin_password TEXT
-        );
-
-        CREATE TABLE IF NOT EXISTS boletos (
-            numero TEXT PRIMARY KEY,
-            estado TEXT,
-            nombre TEXT,
-            telefono TEXT,
-            ciudad TEXT,
-            email TEXT,
-            loteria TEXT,
-            horaSorteo TEXT,
-            fechaReserva INTEGER
-        );
-
-        CREATE TABLE IF NOT EXISTS historial (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            numero TEXT,
-            nombre TEXT,
-            telefono TEXT,
-            ciudad TEXT,
-            email TEXT,
-            loteria TEXT,
-            fecha TEXT
-        );
-    `);
-
-    const configRow = db.prepare('SELECT * FROM config WHERE id = 1').get();
-    if (!configRow) {
-        db.prepare(`
-            INSERT INTO config (id, loteria_nombre, sorteo_horario, precio_boleto, nequi_numero, admin_password)
-            VALUES (1, 'Chontico Noche', 'Lunes a Viernes - 7:00 p.m.', 10000, '3150000000', '1234')
-        `).run();
-    }
-    console.log('✅ Base de datos inicializada y lista.');
-} catch (error) {
-    console.error('❌ ERROR AL INICIALIZAR LA BASE DE DATOS:', error.message);
 }
 
-function verificarReservasExpiradas() {
-    if (!db) return;
+function guardarBD(db) {
     try {
-        const ahora = Date.now();
-        const tiempoLimite = 5 * 60 * 1000;
-        
-        const expirados = db.prepare("SELECT numero FROM boletos WHERE estado = 'RESERVADO' AND ? - fechaReserva > ?").all(ahora, tiempoLimite);
-        const deleteStmt = db.prepare("DELETE FROM boletos WHERE numero = ?");
-        
-        for (const exp of expirados) {
-            deleteStmt.run(exp.numero);
-            console.log(`⏰ Boleto #${exp.numero} expiró y volvió a estar disponible.`);
+        fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), 'utf8');
+    } catch (error) {
+        console.error('❌ Error al guardar la base de datos:', error);
+    }
+}
+
+// ⏱️ Liberar reservas vencidas (más de 5 minutos)
+function verificarReservasExpiradas() {
+    const db = cargarBD();
+    const ahora = Date.now();
+    const tiempoLimite = 5 * 60 * 1000;
+    let modificado = false;
+
+    for (const numero in db.boletos) {
+        const boleto = db.boletos[numero];
+        if (boleto.estado === 'RESERVADO' && (ahora - boleto.fechaReserva > tiempoLimite)) {
+            delete db.boletos[numero];
+            modificado = true;
+            console.log(`⏰ Boleto #${numero} expiró y volvió a estar disponible.`);
         }
-    } catch (e) {
-        console.error('Error en verificarReservasExpiradas:', e.message);
+    }
+
+    if (modificado) {
+        guardarBD(db);
     }
 }
 
 setInterval(verificarReservasExpiradas, 30000);
 
+// Endpoints de la API
 app.get('/api/config', (req, res) => {
     try {
-        const row = db.prepare('SELECT loteria_nombre, sorteo_horario, precio_boleto, nequi_numero FROM config WHERE id = 1').get();
-        res.json(row);
+        const db = cargarBD();
+        res.json({
+            loteria_nombre: db.config.loteria_nombre,
+            sorteo_horario: db.config.sorteo_horario,
+            precio_boleto: db.config.precio_boleto,
+            nequi_numero: db.config.nequi_numero
+        });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
@@ -113,18 +102,15 @@ app.get('/api/config', (req, res) => {
 
 app.post('/api/config', (req, res) => {
     try {
+        const db = cargarBD();
         const { loteria_nombre, sorteo_horario, precio_boleto, nequi_numero } = req.body;
-        const current = db.prepare('SELECT * FROM config WHERE id = 1').get();
 
-        const nuevoNombre = loteria_nombre || current.loteria_nombre;
-        const nuevoHorario = sorteo_horario || current.sorteo_horario;
-        const nuevoPrecio = precio_boleto ? Number(precio_boleto) : current.precio_boleto;
-        const nuevoNequi = nequi_numero || current.nequi_numero;
+        db.config.loteria_nombre = loteria_nombre || db.config.loteria_nombre;
+        db.config.sorteo_horario = sorteo_horario || db.config.sorteo_horario;
+        db.config.precio_boleto = precio_boleto ? Number(precio_boleto) : db.config.precio_boleto;
+        db.config.nequi_numero = nequi_numero || db.config.nequi_numero;
 
-        db.prepare(`
-            UPDATE config SET loteria_nombre = ?, sorteo_horario = ?, precio_boleto = ?, nequi_numero = ? WHERE id = 1
-        `).run(nuevoNombre, nuevoHorario, nuevoPrecio, nuevoNequi);
-
+        guardarBD(db);
         res.json({ success: true, mensaje: "Configuración actualizada con éxito." });
     } catch (e) {
         res.status(500).json({ error: e.message });
@@ -133,9 +119,9 @@ app.post('/api/config', (req, res) => {
 
 app.post('/api/admin/login', (req, res) => {
     try {
+        const db = cargarBD();
         const { password } = req.body;
-        const row = db.prepare('SELECT admin_password FROM config WHERE id = 1').get();
-        if (row && row.admin_password === password) {
+        if (db.config.admin_password === password) {
             res.json({ success: true });
         } else {
             res.status(401).json({ success: false, error: "Contraseña incorrecta" });
@@ -147,11 +133,13 @@ app.post('/api/admin/login', (req, res) => {
 
 app.post('/api/admin/password', (req, res) => {
     try {
+        const db = cargarBD();
         const { nuevaPassword } = req.body;
         if (!nuevaPassword || nuevaPassword.trim() === "") {
             return res.status(400).json({ success: false, error: "Contraseña inválida" });
         }
-        db.prepare('UPDATE config SET admin_password = ? WHERE id = 1').run(nuevaPassword);
+        db.config.admin_password = nuevaPassword;
+        guardarBD(db);
         res.json({ success: true, mensaje: "Contraseña actualizada correctamente" });
     } catch (e) {
         res.status(500).json({ error: e.message });
@@ -160,8 +148,9 @@ app.post('/api/admin/password', (req, res) => {
 
 app.get('/api/admin/historial', (req, res) => {
     try {
-        const historial = db.prepare('SELECT * FROM historial ORDER BY id DESC').all();
-        res.json(historial);
+        const db = cargarBD();
+        const historialOrdenado = [...db.historial].reverse();
+        res.json(historialOrdenado);
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
@@ -169,8 +158,12 @@ app.get('/api/admin/historial', (req, res) => {
 
 app.post('/api/admin/liberar/:numero', (req, res) => {
     try {
+        const db = cargarBD();
         const { numero } = req.params;
-        db.prepare('DELETE FROM boletos WHERE numero = ?').run(numero);
+        if (db.boletos[numero]) {
+            delete db.boletos[numero];
+            guardarBD(db);
+        }
         res.json({ success: true, mensaje: `Boleto #${numero} liberado con éxito.` });
     } catch (e) {
         res.status(500).json({ error: e.message });
@@ -180,22 +173,8 @@ app.post('/api/admin/liberar/:numero', (req, res) => {
 app.get('/api/boletos', (req, res) => {
     try {
         verificarReservasExpiradas();
-        const rows = db.prepare('SELECT * FROM boletos').all();
-        
-        const boletosObj = {};
-        for (const row of rows) {
-            boletosObj[row.numero] = {
-                estado: row.estado,
-                nombre: row.nombre,
-                telefono: row.telefono,
-                ciudad: row.ciudad,
-                email: row.email,
-                loteria: row.loteria,
-                horaSorteo: row.horaSorteo,
-                fechaReserva: row.fechaReserva
-            };
-        }
-        res.json(boletosObj);
+        const db = cargarBD();
+        res.json(db.boletos);
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
@@ -204,31 +183,42 @@ app.get('/api/boletos', (req, res) => {
 app.post('/api/reservar', (req, res) => {
     try {
         verificarReservasExpiradas();
+        const db = cargarBD();
         const { numero, nombre, telefono, ciudad, email, loteria, horaSorteo, acepta_datos } = req.body;
 
         if (!acepta_datos) {
             return res.status(400).json({ error: "Debe aceptar el tratamiento de datos para continuar." });
         }
 
-        const existing = db.prepare('SELECT estado FROM boletos WHERE numero = ?').get(numero);
-        if (existing && existing.estado !== 'DISPONIBLE') {
+        if (db.boletos[numero] && db.boletos[numero].estado !== 'DISPONIBLE') {
             return res.status(400).json({ error: "El boleto ya no está disponible." });
         }
 
         const fechaReserva = Date.now();
 
-        db.prepare(`
-            INSERT INTO boletos (numero, estado, nombre, telefono, ciudad, email, loteria, horaSorteo, fechaReserva)
-            VALUES (?, 'RESERVADO', ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(numero) DO UPDATE SET
-                estado='RESERVADO', nombre=?, telefono=?, ciudad=?, email=?, loteria=?, horaSorteo=?, fechaReserva=?
-        `).run(numero, nombre, telefono, ciudad, email, loteria, horaSorteo, fechaReserva, nombre, telefono, ciudad, email, loteria, horaSorteo, fechaReserva);
+        db.boletos[numero] = {
+            estado: 'RESERVADO',
+            nombre,
+            telefono,
+            ciudad,
+            email,
+            loteria,
+            horaSorteo,
+            fechaReserva
+        };
 
-        db.prepare(`
-            INSERT INTO historial (numero, nombre, telefono, ciudad, email, loteria, fecha)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        `).run(numero, nombre, telefono, ciudad, email, loteria, new Date().toISOString());
+        db.historial.push({
+            id: db.historial.length + 1,
+            numero,
+            nombre,
+            telefono,
+            ciudad,
+            email,
+            loteria,
+            fecha: new Date().toISOString()
+        });
 
+        guardarBD(db);
         res.json({ success: true, mensaje: "Reserva exitosa. Tienes 5 minutos para reportar tu pago." });
     } catch (e) {
         res.status(500).json({ error: e.message });
@@ -237,10 +227,11 @@ app.post('/api/reservar', (req, res) => {
 
 app.post('/api/pagar/:numero', (req, res) => {
     try {
+        const db = cargarBD();
         const { numero } = req.params;
-        const existing = db.prepare('SELECT * FROM boletos WHERE numero = ?').get(numero);
-        if (existing) {
-            db.prepare("UPDATE boletos SET estado = 'PAGADO' WHERE numero = ?").run(numero);
+        if (db.boletos[numero]) {
+            db.boletos[numero].estado = 'PAGADO';
+            guardarBD(db);
             res.json({ success: true, mensaje: `Boleto ${numero} marcado como pagado.` });
         } else {
             res.status(404).json({ success: false, mensaje: 'Boleto no encontrado.' });
@@ -252,5 +243,5 @@ app.post('/api/pagar/:numero', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Servidor corriendo en el puerto ${PORT}`);
+    console.log(`🚀 Servidor corriendo estable en el puerto ${PORT}`);
 });
