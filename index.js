@@ -161,7 +161,6 @@ app.post('/api/reservar', (req, res) => {
         return res.status(400).json({ error: "El boleto ya no está disponible." });
     }
 
-    // Fecha y hora exacta de compra ajustada a la zona horaria de Colombia (America/Bogota) en formato 12 horas
     const fechaCompra = new Date().toLocaleString('es-ES', { 
         timeZone: 'America/Bogota',
         day: 'numeric', 
