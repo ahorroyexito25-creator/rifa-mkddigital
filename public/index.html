@@ -180,6 +180,8 @@
             <span style="color: #f59e0b;">GRAN RIFA</span> CHONTICO NOCHE
         </h1>
         <div class="caja-info">
+            <div id="fechaHoyHeader" style="font-size: 12px; color: #38bdf8; font-weight: 700; text-transform: capitalize; letter-spacing: 0.5px;">📅 Hoy: Cargando...</div>
+            <div style="height: 1px; background: #475569; width: 100%;"></div>
             <div id="premioHeader" style="font-size: 15px; font-weight: 800; color: #f59e0b;">🏆 Premio Mayor: Cargando...</div>
             <div style="height: 1px; background: #475569; width: 100%;"></div>
             <div id="fechaSorteoHeader" style="font-size: 13px; color: #e2e8f0; font-weight: 600;">📅 Sorteo: Cargando...</div>
@@ -211,12 +213,24 @@
             pago_movil_datos: "Banco Mercantil | Tel: 0414-0000000 | C.I: V-12345678"
         };
 
+        function mostrarFechaHoyDinamica() {
+            const ahora = new Date();
+            const opciones = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            let texto = ahora.toLocaleDateString('es-ES', opciones);
+            // Capitalizar la primera letra (ej: "Martes, 1 de septiembre de 2026")
+            texto = texto.charAt(0).toUpperCase() + texto.slice(1);
+            const el = document.getElementById('fechaHoyHeader');
+            if (el) {
+                el.innerHTML = `📅 Hoy: <strong>${texto}</strong>`;
+            }
+        }
+
         function formatearFechaTexto(fechaIso) {
             if (!fechaIso) return "Por definir";
             try {
                 const fecha = new Date(fechaIso);
                 if (isNaN(fecha.getTime())) return fechaIso;
-                const opciones = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+                const opciones = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true };
                 return fecha.toLocaleDateString('es-ES', opciones);
             } catch (e) {
                 return fechaIso;
@@ -297,7 +311,7 @@
                         <h2 style="text-align: center; margin-top:0;">${configGlobal.loteria_nombre} 🎟️</h2>
                         <h3 style="text-align: center; color: #0284c7; margin: 5px 0;">Reservar Boleto: #${numeroBoleto}</h3>
                         <p style="font-size: 13px; color: #334155; text-align: center; background: #f1f5f9; padding: 10px; border-radius: 6px;">
-                            Valor: <strong>${configGlobal.simbolo_moneda || '$'}${Number(configGlobal.precio_boleto).toLocaleString()} ${configGlobal.moneda}</strong><br>
+                            Valor: <b>${configGlobal.simbolo_moneda || '$'}${Number(configGlobal.precio_boleto).toLocaleString()} ${configGlobal.moneda}</b><br>
                             ${infoPagoTexto}<br>
                             <span style="color: #e11d48; font-weight: bold;">Tienes 5 minutos para reportar tu pago.</span>
                         </p>
@@ -607,6 +621,7 @@
         }
 
         window.onload = async () => {
+            mostrarFechaHoyDinamica();
             await cargarConfiguracion();
             await renderizarBoletos();
         };
