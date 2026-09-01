@@ -55,27 +55,7 @@ function cargarBD() {
             };
             fs.writeFileSync(DB_FILE, JSON.stringify(initialData, null, 2), 'utf8');
         }
-        const db = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-
-        // VALIDAR EXPIRACIÓN DE RESERVAS (5 MINUTOS)
-        const ahora = Date.now();
-        let modificado = false;
-        if (db.boletos) {
-            for (let num in db.boletos) {
-                if (db.boletos[num].estado === 'RESERVADO') {
-                    const tiempoTranscurrido = ahora - (db.boletos[num].timestampReserva || 0);
-                    if (tiempoTranscurrido > 5 * 60 * 1000) { // 5 minutos en milisegundos
-                        delete db.boletos[num];
-                        modificado = true;
-                    }
-                }
-            }
-        }
-        if (modificado) {
-            guardarBD(db);
-        }
-
-        return db;
+        return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
     } catch (error) {
         console.error('Error al cargar BD:', error);
         return {
@@ -165,7 +145,7 @@ app.post('/api/admin/liberar/:numero', (req, res) => {
 });
 
 app.get('/api/boletos', (req, res) => {
-    const db = cargarBD(); // cargarBD() ya ejecuta la limpieza de los 5 minutos
+    const db = cargarBD();
     res.json(db.boletos);
 });
 
@@ -181,6 +161,7 @@ app.post('/api/reservar', (req, res) => {
         return res.status(400).json({ error: "El boleto ya no está disponible." });
     }
 
+    // Fecha y hora exacta de compra ajustada a la zona horaria de Colombia (America/Bogota) en formato 12 horas
     const fechaCompra = new Date().toLocaleString('es-ES', { 
         timeZone: 'America/Bogota',
         day: 'numeric', 
@@ -210,13 +191,12 @@ app.post('/api/reservar', (req, res) => {
 
 app.post('/api/pagar/:numero', (req, res) => {
     const db = cargarBD();
-    const numero = req.params.numero;
-    if (db.boletos[numero]) {
-        db.boletos[numero].estado = 'PAGADO';
+    if (db.boletos[req.params.numero]) {
+        db.boletos[req.params.numero].estado = 'PAGADO';
         guardarBD(db);
-        res.json({ success: true, boleto: db.boletos[numero] });
+        res.json({ success: true });
     } else {
-        res.status(404).json({ success: false, error: "Boleto no encontrado" });
+        res.status(404).json({ success: false });
     }
 });
 
