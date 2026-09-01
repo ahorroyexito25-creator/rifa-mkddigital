@@ -1,5 +1,3 @@
-
-
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -30,7 +28,7 @@ app.get('/', (req, res) => {
     }
 });
 
-// Configuración de base de datos compatible con local (Windows/Mac) y Railway
+// Configuración de base de datos compatible con local y Railway
 const DATA_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH || path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'rifa.json');
 
@@ -43,10 +41,16 @@ function cargarBD() {
             const initialData = {
                 config: {
                     id: 1,
+                    pais: 'colombia', // 'colombia', 'venezuela_ves', 'venezuela_usd'
+                    moneda: 'COP',    // 'COP', 'VES', 'USD'
+                    simbolo_moneda: '$',
                     loteria_nombre: 'Chontico Noche',
-                    sorteo_horario: 'Lunes a Viernes - 7:00 p.m.',
+                    sorteo_horario: '7:00 p.m. (Col) / 8:00 p.m. (Ven)',
                     precio_boleto: 10000,
+                    premio_mayor: '$1.000.000 COP',
                     nequi_numero: '3150000000',
+                    bancolombia_numero: '000-00000-00',
+                    pago_movil_datos: 'Banco: Mercantil | Tel: 0414-0000000 | C.I: V-12345678',
                     admin_password: '1234'
                 },
                 boletos: {},
@@ -58,7 +62,20 @@ function cargarBD() {
     } catch (error) {
         console.error('Error al cargar BD:', error);
         return {
-            config: { id: 1, loteria_nombre: 'Chontico Noche', sorteo_horario: 'Lunes a Viernes - 7:00 p.m.', precio_boleto: 10000, nequi_numero: '3150000000', admin_password: '1234' },
+            config: { 
+                id: 1, 
+                pais: 'colombia',
+                moneda: 'COP',
+                simbolo_moneda: '$',
+                loteria_nombre: 'Chontico Noche', 
+                sorteo_horario: '7:00 p.m. (Col) / 8:00 p.m. (Ven)', 
+                precio_boleto: 10000, 
+                premio_mayor: '$1.000.000 COP',
+                nequi_numero: '3150000000', 
+                bancolombia_numero: '000-00000-00',
+                pago_movil_datos: 'Banco: Mercantil | Tel: 0414-0000000 | C.I: V-12345678',
+                admin_password: '1234' 
+            },
             boletos: {},
             historial: []
         };
@@ -75,21 +92,24 @@ function guardarBD(db) {
 
 app.get('/api/config', (req, res) => {
     const db = cargarBD();
-    res.json({
-        loteria_nombre: db.config.loteria_nombre,
-        sorteo_horario: db.config.sorteo_horario,
-        precio_boleto: db.config.precio_boleto,
-        nequi_numero: db.config.nequi_numero
-    });
+    res.json(db.config);
 });
 
 app.post('/api/config', (req, res) => {
     const db = cargarBD();
-    const { loteria_nombre, sorteo_horario, precio_boleto, nequi_numero } = req.body;
+    const { pais, moneda, simbolo_moneda, loteria_nombre, sorteo_horario, precio_boleto, premio_mayor, nequi_numero, bancolombia_numero, pago_movil_datos } = req.body;
+    
+    db.config.pais = pais || db.config.pais;
+    db.config.moneda = moneda || db.config.moneda;
+    db.config.simbolo_moneda = simbolo_moneda || db.config.simbolo_moneda;
     db.config.loteria_nombre = loteria_nombre || db.config.loteria_nombre;
     db.config.sorteo_horario = sorteo_horario || db.config.sorteo_horario;
     db.config.precio_boleto = precio_boleto ? Number(precio_boleto) : db.config.precio_boleto;
-    db.config.nequi_numero = nequi_numero || db.config.nequi_numero;
+    db.config.premio_mayor = premio_mayor || db.config.premio_mayor;
+    db.config.nequi_numero = nequi_numero !== undefined ? nequi_numero : db.config.nequi_numero;
+    db.config.bancolombia_numero = bancolombia_numero !== undefined ? bancolombia_numero : db.config.bancolombia_numero;
+    db.config.pago_movil_datos = pago_movil_datos !== undefined ? pago_movil_datos : db.config.pago_movil_datos;
+    
     guardarBD(db);
     res.json({ success: true });
 });
@@ -100,6 +120,18 @@ app.post('/api/admin/login', (req, res) => {
         res.json({ success: true });
     } else {
         res.status(401).json({ success: false, error: "Contraseña incorrecta" });
+    }
+});
+
+app.post('/api/admin/password', (req, res) => {
+    const db = cargarBD();
+    const { nuevaPassword } = req.body;
+    if (nuevaPassword && nuevaPassword.trim() !== "") {
+        db.config.admin_password = nuevaPassword.trim();
+        guardarBD(db);
+        res.json({ success: true });
+    } else {
+        res.status(400).json({ success: false, error: "Contraseña inválida" });
     }
 });
 
@@ -129,7 +161,7 @@ app.post('/api/reservar', (req, res) => {
     }
 
     if (db.boletos[numero] && db.boletos[numero].estado !== 'DISPONIBLE') {
-        return res.status(0).json({ error: "El boleto ya no está disponible." });
+        return res.status(400).json({ error: "El boleto ya no está disponible." });
     }
 
     db.boletos[numero] = {
