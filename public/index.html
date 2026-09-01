@@ -153,6 +153,7 @@
             display: flex; gap: 10px; justify-content: center; margin-top: 15px;
         }
         .btn-guardar { background-color: #0284c7; color: white; padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; }
+        .btn-whatsapp { background-color: #16a34a; color: white; padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; text-decoration: none; display: inline-block; text-align: center; }
         .btn-cancelar { background-color: #e11d48; color: white; padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
         
         footer {
@@ -305,7 +306,7 @@
 
             let infoPagoTexto = '';
             if (configGlobal.pais === 'colombia' || configGlobal.moneda === 'COP') {
-                infoPagoTexto = `Paga vía <b>Nequi</b> (${configGlobal.nequi_numero}) o <b>Bancolombia</b> (${configGlobal.bancolombia_numero}) con código QR o transferencia.`;
+                infoPagoTexto = `Paga vía <b>Nequi</b> (${configGlobal.nequi_numero}) o <b>Bancolombia</b> (${configGlobal.bancolombia_numero}).`;
             } else {
                 infoPagoTexto = `Paga vía <b>Pago Móvil</b>:<br><small>${configGlobal.pago_movil_datos}</small>`;
             }
@@ -318,11 +319,11 @@
                         <p style="font-size: 13px; color: #334155; text-align: center; background: #f1f5f9; padding: 10px; border-radius: 6px;">
                             Valor: <b>${configGlobal.simbolo_moneda || '$'}${Number(configGlobal.precio_boleto).toLocaleString()} ${configGlobal.moneda}</b><br>
                             ${infoPagoTexto}<br>
-                            <span style="color: #e11d48; font-weight: bold;">Tienes 5 minutos para reportar tu pago.</span>
+                            <span style="color: #e11d48; font-weight: bold;">⏱️ Tienes 5 minutos antes de que la reserva expire.</span>
                         </p>
                         <form id="form-reserva">
                             <input type="text" id="nombre" placeholder="Nombre completo" required />
-                            <input type="tel" id="telefono" placeholder="Teléfono / WhatsApp (ej: +57... o +58...)" required />
+                            <input type="tel" id="telefono" placeholder="Teléfono / WhatsApp (ej: +57315...)" required />
                             <input type="text" id="ciudad" placeholder="Ciudad / Estado" required />
                             <input type="email" id="email" placeholder="Correo electrónico" required />
                             
@@ -367,7 +368,7 @@
                     if (!respuesta.ok) throw new Error(resultado.error || "Error al reservar");
                     
                     document.getElementById('modal-comprador').remove();
-                    alert(`¡Boleto #${numeroBoleto} reservado temporalmente!`);
+                    alert(`¡Boleto #${numeroBoleto} reservado temporalmente por 5 minutos!`);
                     renderizarBoletos();
                 } catch (error) {
                     alert(error.message);
@@ -407,35 +408,35 @@
                             <label style="font-size:11px; font-weight:bold;">Nombre Lotería:</label>
                             <input type="text" id="adminLoteria" value="${configGlobal.loteria_nombre}" />
                             
-                            <label style="font-size:11px; font-weight:bold;">Premio Mayor (Texto e importe):</label>
+                            <label style="font-size:11px; font-weight:bold;">Premio Mayor:</label>
                             <input type="text" id="adminPremio" value="${configGlobal.premio_mayor}" />
 
-                            <label style="font-size:11px; font-weight:bold;">Fecha y Hora del Sorteo (Calendario):</label>
+                            <label style="font-size:11px; font-weight:bold;">Fecha y Hora del Sorteo:</label>
                             <input type="datetime-local" id="adminFechaSorteo" value="${configGlobal.fecha_sorteo || ''}" />
 
                             <label style="font-size:11px; font-weight:bold;">Precio del Boleto:</label>
                             <input type="number" id="adminPrecio" value="${configGlobal.precio_boleto}" />
 
-                            <label style="font-size:11px; font-weight:bold;">Símbolo Moneda ($ / Bs):</label>
+                            <label style="font-size:11px; font-weight:bold;">Símbolo Moneda:</label>
                             <input type="text" id="adminSimbolo" value="${configGlobal.simbolo_moneda}" />
 
-                            <label style="font-size:11px; font-weight:bold;">Código Moneda (COP / VES / USD):</label>
+                            <label style="font-size:11px; font-weight:bold;">Código Moneda:</label>
                             <input type="text" id="adminMoneda" value="${configGlobal.moneda}" />
 
                             <h4 style="color: #333; margin: 10px 0 5px 0;">💳 Datos de Pago</h4>
-                            <label style="font-size:11px; font-weight:bold;">Número Nequi (Colombia):</label>
+                            <label style="font-size:11px; font-weight:bold;">Nequi:</label>
                             <input type="text" id="adminNequi" value="${configGlobal.nequi_numero}" />
 
-                            <label style="font-size:11px; font-weight:bold;">Número Bancolombia (Colombia):</label>
+                            <label style="font-size:11px; font-weight:bold;">Bancolombia:</label>
                             <input type="text" id="adminBancolombia" value="${configGlobal.bancolombia_numero}" />
 
-                            <label style="font-size:11px; font-weight:bold;">Datos Pago Móvil (Venezuela):</label>
+                            <label style="font-size:11px; font-weight:bold;">Pago Móvil:</label>
                             <input type="text" id="adminPagoMovil" value="${configGlobal.pago_movil_datos}" />
 
                             <button type="button" class="btn-guardar" onclick="guardarConfiguracionAdmin()" style="margin-top: 10px;">Guardar Cambios</button>
 
-                            <h4 style="color: #333; margin: 15px 0 5px 0;">🎟️ Reservas Pendientes</h4>
-                            <div id="listaReservados" style="max-height: 120px; overflow-y: auto; font-size: 12px; border: 1px solid #cbd5e1; padding: 6px; border-radius: 6px;">Cargando...</div>
+                            <h4 style="color: #333; margin: 15px 0 5px 0;">🎟️ Reservas y Pagos Pendientes</h4>
+                            <div id="listaReservados" style="max-height: 140px; overflow-y: auto; font-size: 12px; border: 1px solid #cbd5e1; padding: 6px; border-radius: 6px;">Cargando...</div>
                             
                             <div style="margin-top: 10px; border-top: 1px solid #cbd5e1; padding-top: 8px;">
                                 <h4 style="color: #333; margin-bottom: 3px;">🔑 Cambiar Clave Admin</h4>
@@ -523,12 +524,12 @@
                     if (b && (b.estado === 'RESERVADO' || b.estado === 'PAGADO')) {
                         count++;
                         const divItem = document.createElement('div');
-                        divItem.style.cssText = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 3px;";
+                        divItem.style.cssText = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 4px;";
                         divItem.innerHTML = `
-                            <span><b>#${num}</b> - ${b.nombre} (${b.estado})</span>
-                            <div>
-                                ${b.estado === 'RESERVADO' ? `<button onclick="marcarPagado('${num}')" style="background:#059669; color:white; border:none; padding:2px 6px; border-radius:4px; cursor:pointer; font-size:11px; margin-right:4px;">Aprobar</button>` : ''}
-                                <button onclick="liberarBoleto('${num}')" style="background:#e11d48; color:white; border:none; padding:2px 6px; border-radius:4px; cursor:pointer; font-size:11px;">Liberar</button>
+                            <span><b>#${num}</b> - ${b.nombre} <br><small style="color: #64748b;">Estado: ${b.estado}</small></span>
+                            <div style="display: flex; gap: 4px;">
+                                ${b.estado === 'RESERVADO' ? `<button onclick="marcarPagado('${num}')" style="background:#059669; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px;">Aprobar</button>` : `<button onclick="mostrarTicketModal(${JSON.stringify(b).replace(/"/g, '&quot;')}, '${num}')" style="background:#0284c7; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px;">Ver Ticket</button>`}
+                                <button onclick="liberarBoleto('${num}')" style="background:#e11d48; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px;">Liberar</button>
                             </div>
                         `;
                         contenedor.appendChild(divItem);
@@ -545,9 +546,12 @@
         async function marcarPagado(numero) {
             try {
                 const res = await fetch(`/api/pagar/${numero}`, { method: 'POST' });
-                if (res.ok) {
+                const data = await res.json();
+                if (res.ok && data.success) {
                     cargarReservasAdmin();
                     renderizarBoletos();
+                    // Mostrar modal del ticket con opción de enviar por WhatsApp
+                    mostrarTicketModal(data.boleto, numero);
                 } else {
                     alert('Error al actualizar boleto');
                 }
@@ -556,8 +560,43 @@
             }
         }
 
+        function mostrarTicketModal(boleto, numero) {
+            if (document.getElementById('modalTicket')) document.getElementById('modalTicket').remove();
+
+            // Limpiar número de teléfono para enlace de WhatsApp
+            const telLimpio = (boleto.telefono || '').replace(/\D/g, '');
+            const mensajeWp = encodeURIComponent(
+                `¡Hola *${boleto.nombre}*! 🎟️\n\n` +
+                `Tu pago para el boleto *#${numero}* en la rifa *${boleto.loteria}* ha sido *APROBADO Y CONFIRMADO* ✅.\n\n` +
+                `🏆 *Premio Mayor:* ${configGlobal.premio_mayor}\n` +
+                `📅 *Sorteo:* ${boleto.fechaSorteo}\n\n` +
+                `¡Mucha suerte! Guárdalo como comprobante oficial. 🎲`
+            );
+            const urlWhatsapp = `https://wa.me/${telLimpio}?text=${mensajeWp}`;
+
+            const ticketHtml = `
+                <div id="modalTicket" class="modal">
+                    <div class="modal-content" style="text-align: center;">
+                        <h2 style="margin-top:0; color: #1e293b;">🎫 TICKET OFICIAL 🎫</h2>
+                        <div style="background: #f8fafc; border: 2px dashed #0284c7; padding: 15px; border-radius: 8px; margin: 15px 0; text-align: left;">
+                            <p style="margin: 4px 0;"><b>Boleto:</b> #${numero}</p>
+                            <p style="margin: 4px 0;"><b>Participante:</b> ${boleto.nombre}</p>
+                            <p style="margin: 4px 0;"><b>Teléfono:</b> ${boleto.telefono}</p>
+                            <p style="margin: 4px 0;"><b>Ciudad:</b> ${boleto.ciudad}</p>
+                            <p style="margin: 4px 0;"><b>Lotería:</b> ${boleto.loteria}</p>
+                            <p style="margin: 4px 0;"><b>Sorteo:</b> ${boleto.fechaSorteo}</p>
+                            <p style="margin: 4px 0; color: #059669; font-weight: bold;">Estado: PAGADO Y CONFIRMADO</p>
+                        </div>
+                        <a href="${urlWhatsapp}" target="_blank" class="btn-whatsapp" style="margin-bottom: 10px;">📲 Enviar Ticket por WhatsApp</a>
+                        <button type="button" class="btn-cancelar" onclick="document.getElementById('modalTicket').remove()" style="width: 100%;">Cerrar</button>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', ticketHtml);
+        }
+
         async function liberarBoleto(numero) {
-            if (!confirm(`¿Estás seguro de liberar el boleto #${numero}?`)) return;
+            if (!confirm(`¿Estás seguro de liberar el boleto #${numero}? Quedará disponible nuevamente para la venta.`)) return;
             try {
                 const res = await fetch(`/api/admin/liberar/${numero}`, { method: 'POST' });
                 if (res.ok) {
@@ -632,7 +671,7 @@
             mostrarFechaHoyDinamica();
             cargarConfiguracion();
             renderizarBoletos();
-            setInterval(renderizarBoletos, 10000);
+            setInterval(renderizarBoletos, 10000); // Sincroniza y limpia expirados cada 10s
         };
     </script>
 </body>
