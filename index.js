@@ -44,7 +44,7 @@ function cargarBD() {
                     loteria_nombre: 'Chontico Noche',
                     fecha_sorteo: '2026-09-05T19:00',
                     precio_boleto: 10000,
-                    premio_mayor: '$1.000.000 COP',
+                    premio_mayor: '700.000 $ COP',
                     nequi_numero: '3150000000',
                     bancolombia_numero: '000-00000-00',
                     pago_movil_datos: 'Banco: Mercantil | Tel: 0414-0000000 | C.I: V-12345678',
@@ -67,7 +67,7 @@ function cargarBD() {
                 loteria_nombre: 'Chontico Noche', 
                 fecha_sorteo: '2026-09-05T19:00',
                 precio_boleto: 10000, 
-                premio_mayor: '$1.000.000 COP',
+                premio_mayor: '700.000 $ COP',
                 nequi_numero: '3150000000', 
                 bancolombia_numero: '000-00000-00',
                 pago_movil_datos: 'Banco: Mercantil | Tel: 0414-0000000 | C.I: V-12345678',
@@ -161,8 +161,9 @@ app.post('/api/reservar', (req, res) => {
         return res.status(400).json({ error: "El boleto ya no está disponible." });
     }
 
-    // Formato de hora en 12 horas (AM/PM)
+    // Fecha y hora exacta de compra ajustada a la zona horaria de Colombia (America/Bogota) en formato 12 horas
     const fechaCompra = new Date().toLocaleString('es-ES', { 
+        timeZone: 'America/Bogota',
         day: 'numeric', 
         month: 'short', 
         year: 'numeric', 
