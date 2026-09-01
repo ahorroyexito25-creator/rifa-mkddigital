@@ -154,7 +154,6 @@
         }
         .btn-guardar { background-color: #0284c7; color: white; padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; }
         .btn-cancelar { background-color: #e11d48; color: white; padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        .btn-whatsapp { background-color: #16a34a; color: white; padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; text-decoration: none; display: inline-block; text-align: center; margin-top: 8px;}
         
         footer {
             text-align: center;
@@ -214,19 +213,21 @@
             pago_movil_datos: "Banco Mercantil | Tel: 0414-0000000 | C.I: V-12345678"
         };
 
-        window.onload = () => {
-            mostrarFechaHoyDinamica();
-            cargarConfiguracion().then(() => renderizarBoletos());
-            setInterval(renderizarBoletos, 10000); // Sincroniza cada 10s
-        };
-
         function mostrarFechaHoyDinamica() {
             const ahora = new Date();
             const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
             const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-            const texto = `${dias[ahora.getDay()]} ${ahora.getDate()} de ${meses[ahora.getMonth()]} del ${ahora.getFullYear()}`.toUpperCase();
+            
+            const diaSemana = dias[ahora.getDay()];
+            const diaNum = ahora.getDate();
+            const mes = meses[ahora.getMonth()];
+            const anio = ahora.getFullYear();
+            
+            const texto = `${diaSemana} ${diaNum} de ${mes} del ${anio}`.toUpperCase();
             const el = document.getElementById('fechaHoyHeader');
-            if (el) el.innerHTML = `📅 Hoy: <strong>${texto}</strong>`;
+            if (el) {
+                el.innerHTML = `📅 Hoy: <strong>${texto}</strong>`;
+            }
         }
 
         function formatearFechaTexto(fechaIso) {
@@ -234,7 +235,8 @@
             try {
                 const fecha = new Date(fechaIso);
                 if (isNaN(fecha.getTime())) return fechaIso;
-                return fecha.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
+                const opciones = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true };
+                return fecha.toLocaleDateString('es-ES', opciones);
             } catch (e) {
                 return fechaIso;
             }
@@ -252,7 +254,7 @@
                     document.getElementById('fechaSorteoHeader').innerHTML = `📅 Fecha del Sorteo: ${formatearFechaTexto(data.fecha_sorteo)}`;
                 }
             } catch (e) {
-                console.error("Error al cargar configuración:", e);
+                console.error("Error al cargar configuración dinámica:", e);
             }
         }
 
@@ -301,37 +303,30 @@
         function abrirModalReserva(numeroBoleto) {
             if (document.getElementById('modal-comprador')) document.getElementById('modal-comprador').remove();
 
-            let infoPagoHtml = '';
-            let textoQrData = '';
+            let infoPagoTexto = '';
             if (configGlobal.pais === 'colombia' || configGlobal.moneda === 'COP') {
-                infoPagoHtml = `Paga vía <b>Nequi</b> (${configGlobal.nequi_numero}) o <b>Bancolombia</b> (${configGlobal.bancolombia_numero}).`;
-                textoQrData = `Nequi:${configGlobal.nequi_numero}|Bancolombia:${configGlobal.bancolombia_numero}|Valor:${configGlobal.precio_boleto}`;
+                infoPagoTexto = `Paga vía <b>Nequi</b> (${configGlobal.nequi_numero}) o <b>Bancolombia</b> (${configGlobal.bancolombia_numero}) con código QR o transferencia.`;
             } else {
-                infoPagoHtml = `Paga vía <b>Pago Móvil</b>:<br><small>${configGlobal.pago_movil_datos}</small>`;
-                textoQrData = `PagoMovil:${configGlobal.pago_movil_datos}|Valor:${configGlobal.precio_boleto}`;
+                infoPagoTexto = `Paga vía <b>Pago Móvil / Divisas</b>:<br><small>${configGlobal.pago_movil_datos}</small>`;
             }
-
-            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(textoQrData)}`;
 
             const modalHtml = `
                 <div id="modal-comprador" class="modal">
                     <div class="modal-content">
                         <h2 style="text-align: center; margin-top:0;">${configGlobal.loteria_nombre} 🎟️</h2>
                         <h3 style="text-align: center; color: #0284c7; margin: 5px 0;">Reservar Boleto: #${numeroBoleto}</h3>
-                        <div style="text-align: center; margin: 8px 0;">
-                            <img src="${qrUrl}" alt="QR Pago" style="border-radius: 6px; border: 1px solid #cbd5e1; width: 120px; height: 120px;" />
-                        </div>
-                        <p style="font-size: 12px; color: #334155; text-align: center; background: #f1f5f9; padding: 8px; border-radius: 6px; margin: 5px 0;">
+                        <p style="font-size: 13px; color: #334155; text-align: center; background: #f1f5f9; padding: 10px; border-radius: 6px;">
                             Valor: <b>${configGlobal.simbolo_moneda || '$'}${Number(configGlobal.precio_boleto).toLocaleString()} ${configGlobal.moneda}</b><br>
-                            ${infoPagoHtml}
+                            ${infoPagoTexto}<br>
+                            <span style="color: #e11d48; font-weight: bold;">Tienes 5 minutos para reportar tu pago.</span>
                         </p>
                         <form id="form-reserva">
                             <input type="text" id="nombre" placeholder="Nombre completo" required />
-                            <input type="tel" id="telefono" placeholder="Teléfono / WhatsApp (ej: +57...)" required />
+                            <input type="tel" id="telefono" placeholder="Teléfono / WhatsApp (ej: +57... o +58...)" required />
                             <input type="text" id="ciudad" placeholder="Ciudad / Estado" required />
                             <input type="email" id="email" placeholder="Correo electrónico" required />
                             
-                            <div style="margin: 8px 0; font-size: 11px; display: flex; align-items: flex-start; gap: 8px;">
+                            <div style="margin: 10px 0; font-size: 12px; display: flex; align-items: flex-start; gap: 8px;">
                                 <input type="checkbox" id="acepta-datos" required style="margin-top: 3px;" />
                                 <label for="acepta-datos" style="cursor: pointer; color: #334155;">
                                     Autorizo el tratamiento de mis datos personales para gestionar esta rifa.
@@ -339,7 +334,7 @@
                             </div>
 
                             <div class="modal-buttons">
-                                <button type="submit" class="btn-guardar">Reservar y Obtener QR</button>
+                                <button type="submit" class="btn-guardar">Reservar (5 min)</button>
                                 <button type="button" id="btn-cancelar" class="btn-cancelar">Cancelar</button>
                             </div>
                         </form>
@@ -372,33 +367,12 @@
                     if (!respuesta.ok) throw new Error(resultado.error || "Error al reservar");
                     
                     document.getElementById('modal-comprador').remove();
-                    mostrarModalExitoReserva(numeroBoleto, datos.nombre, resultado.antifraude, resultado.fechaCompra);
+                    alert(`¡Boleto #${numeroBoleto} reservado temporalmente!`);
                     renderizarBoletos();
                 } catch (error) {
                     alert(error.message);
                 }
             };
-        }
-
-        function mostrarModalExitoReserva(numero, nombre, antifraude, fechaCompra) {
-            const mensajeWp = `¡Hola! He reservado el boleto #${numero} para la rifa ${configGlobal.loteria_nombre}.%0A- Nombre: ${nombre}%0A- Fecha: ${fechaCompra}%0A- Código Antifraude: ${antifraude}%0AAdjunto comprobante de pago.`;
-            const linkWp = `https://api.whatsapp.com/send?phone=573150000000&text=${mensajeWp}`;
-
-            const html = `
-                <div class="modal" id="modal-exito">
-                    <div class="modal-content" style="text-align: center;">
-                        <h3 style="color: #059669; margin-top:0;">¡Boleto #${numero} Reservado!</h3>
-                        <p style="font-size: 13px; color: #334155;">
-                            Código Antifraude:<br>
-                            <code style="font-size: 15px; background: #f1f5f9; padding: 4px 8px; border-radius: 4px; font-weight: bold; color: #e11d48;">${antifraude}</code>
-                        </p>
-                        <p style="font-size: 12px; color: #475569;">Reporta tu pago inmediatamente enviando el comprobante por WhatsApp al administrador.</p>
-                        <a href="${linkWp}" target="_blank" class="btn-whatsapp">📲 Enviar Comprabante por WhatsApp</a>
-                        <button type="button" class="btn-guardar" style="margin-top: 10px;" onclick="document.getElementById('modal-exito').remove()">Cerrar</button>
-                    </div>
-                </div>
-            `;
-            document.body.insertAdjacentHTML('beforeend', html);
         }
 
         function abrirAdmin() {
@@ -413,7 +387,7 @@
                             <p style="font-size:13px;">Ingrese contraseña de acceso:</p>
                             <div style="position: relative; display: flex; align-items: center; margin: 8px 0;">
                                 <input type="password" id="inputPassword" placeholder="Contraseña" style="width: 100%; padding-right: 35px; margin: 0;" />
-                                <span onclick="togglePassword()" id="iconoOjo" style="position: absolute; right: 10px; cursor: pointer; font-size: 16px;">👁️</span>
+                                <span onclick="togglePassword()" id="iconoOjo" style="position: absolute; right: 10px; cursor: pointer; user-select: none; font-size: 16px;">👁️</span>
                             </div>
                             <div class="modal-buttons">
                                 <button type="button" class="btn-guardar" onclick="verificarPassword()">Ingresar</button>
@@ -433,10 +407,10 @@
                             <label style="font-size:11px; font-weight:bold;">Nombre Lotería:</label>
                             <input type="text" id="adminLoteria" value="${configGlobal.loteria_nombre}" />
                             
-                            <label style="font-size:11px; font-weight:bold;">Premio Mayor:</label>
+                            <label style="font-size:11px; font-weight:bold;">Premio Mayor (Texto e importe):</label>
                             <input type="text" id="adminPremio" value="${configGlobal.premio_mayor}" />
 
-                            <label style="font-size:11px; font-weight:bold;">Fecha y Hora del Sorteo:</label>
+                            <label style="font-size:11px; font-weight:bold;">Fecha y Hora del Sorteo (Calendario):</label>
                             <input type="datetime-local" id="adminFechaSorteo" value="${configGlobal.fecha_sorteo || ''}" />
 
                             <label style="font-size:11px; font-weight:bold;">Precio del Boleto:</label>
@@ -449,10 +423,10 @@
                             <input type="text" id="adminMoneda" value="${configGlobal.moneda}" />
 
                             <h4 style="color: #333; margin: 10px 0 5px 0;">💳 Datos de Pago</h4>
-                            <label style="font-size:11px; font-weight:bold;">Número Nequi:</label>
+                            <label style="font-size:11px; font-weight:bold;">Número Nequi (Colombia):</label>
                             <input type="text" id="adminNequi" value="${configGlobal.nequi_numero}" />
 
-                            <label style="font-size:11px; font-weight:bold;">Número Bancolombia:</label>
+                            <label style="font-size:11px; font-weight:bold;">Número Bancolombia (Colombia):</label>
                             <input type="text" id="adminBancolombia" value="${configGlobal.bancolombia_numero}" />
 
                             <label style="font-size:11px; font-weight:bold;">Datos Pago Móvil (Venezuela):</label>
@@ -460,8 +434,8 @@
 
                             <button type="button" class="btn-guardar" onclick="guardarConfiguracionAdmin()" style="margin-top: 10px;">Guardar Cambios</button>
 
-                            <h4 style="color: #333; margin: 15px 0 5px 0;">🎟️ Gestionar Boletos</h4>
-                            <div id="listaReservados" style="max-height: 140px; overflow-y: auto; font-size: 11px; border: 1px solid #cbd5e1; padding: 6px; border-radius: 6px;">Cargando...</div>
+                            <h4 style="color: #333; margin: 15px 0 5px 0;">🎟️ Reservas Pendientes</h4>
+                            <div id="listaReservados" style="max-height: 120px; overflow-y: auto; font-size: 12px; border: 1px solid #cbd5e1; padding: 6px; border-radius: 6px;">Cargando...</div>
                             
                             <div style="margin-top: 10px; border-top: 1px solid #cbd5e1; padding-top: 8px;">
                                 <h4 style="color: #333; margin-bottom: 3px;">🔑 Cambiar Clave Admin</h4>
@@ -527,100 +501,135 @@
                 if (data.success) {
                     document.getElementById('divLogin').style.display = 'none';
                     document.getElementById('divContenidoAdmin').style.display = 'block';
-                    cargarListaAdminBoletos();
+                    cargarReservadosAdmin();
                 } else {
-                    alert("Contraseña incorrecta");
+                    alert('Contraseña incorrecta');
                 }
             } catch (e) {
-                alert("Error de conexión");
+                alert('Error al verificar credenciales.');
             }
-        }
-
-        async function cargarListaAdminBoletos() {
-            try {
-                const res = await fetch('/api/boletos');
-                const boletos = await res.json();
-                const contenedor = document.getElementById('listaReservados');
-                let html = '';
-                
-                const keys = Object.keys(boletos);
-                if (keys.length === 0) {
-                    contenedor.innerHTML = 'No hay boletos reservados o pagados.';
-                    return;
-                }
-
-                keys.forEach(num => {
-                    const b = boletos[num];
-                    html += `<div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding: 4px 0;">
-                        <span><b>#${num}</b> - ${b.nombre} (${b.estado})</span>
-                        <div>
-                            ${b.estado === 'RESERVADO' ? `<button onclick="marcarPagado('${num}')" style="background:#16a34a;color:white;border:none;padding:2px 6px;border-radius:4px;cursor:pointer;">Aprobar</button>` : ''}
-                            <button onclick="liberarBoleto('${num}')" style="background:#dc2626;color:white;border:none;padding:2px 6px;border-radius:4px;cursor:pointer;margin-left:4px;">Liberar</button>
-                        </div>
-                    </div>`;
-                });
-                contenedor.innerHTML = html;
-            } catch (e) {
-                console.error(e);
-            }
-        }
-
-        async function marcarPagado(numero) {
-            await fetch(`/api/pagar/${numero}`, { method: 'POST' });
-            cargarListaAdminBoletos();
-            renderizarBoletos();
-        }
-
-        async function liberarBoleto(numero) {
-            if (!confirm(`¿Liberar boleto #${numero}?`)) return;
-            await fetch(`/api/admin/liberar/${numero}`, { method: 'POST' });
-            cargarListaAdminBoletos();
-            renderizarBoletos();
         }
 
         async function guardarConfiguracionAdmin() {
-            const nuevaConfig = {
+            const datosConfig = {
                 pais: document.getElementById('adminPais').value,
-                moneda: document.getElementById('adminMoneda').value,
-                simbolo_moneda: document.getElementById('adminSimbolo').value,
                 loteria_nombre: document.getElementById('adminLoteria').value,
-                fecha_sorteo: document.getElementById('adminFechaSorteo').value,
-                precio_boleto: Number(document.getElementById('adminPrecio').value),
                 premio_mayor: document.getElementById('adminPremio').value,
+                fecha_sorteo: document.getElementById('adminFechaSorteo').value,
+                precio_boleto: document.getElementById('adminPrecio').value,
+                simbolo_moneda: document.getElementById('adminSimbolo').value,
+                moneda: document.getElementById('adminMoneda').value,
                 nequi_numero: document.getElementById('adminNequi').value,
                 bancolombia_numero: document.getElementById('adminBancolombia').value,
                 pago_movil_datos: document.getElementById('adminPagoMovil').value
             };
 
-            const res = await fetch('/api/config', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(nuevaConfig)
-            });
-            if (res.ok) {
-                alert("Configuración guardada correctamente");
-                document.getElementById('modalAdmin').remove();
-                cargarConfiguracion();
-            } else {
-                alert("Error al guardar");
+            try {
+                const res = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(datosConfig)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('¡Configuración actualizada con éxito!');
+                    await cargarConfiguracion();
+                    document.getElementById('modalAdmin').remove();
+                } else {
+                    alert('Error al guardar configuración.');
+                }
+            } catch (e) {
+                alert('Error de conexión con el servidor.');
             }
         }
 
         async function actualizarPassword() {
             const nuevaPassword = document.getElementById('nuevaPassword').value;
-            if (!nuevaPassword) return alert("Ingrese una contraseña válida");
-            const res = await fetch('/api/admin/password', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ nuevaPassword })
-            });
-            if (res.ok) {
-                alert("Contraseña actualizada con éxito");
-                document.getElementById('nuevaPassword').value = '';
-            } else {
-                alert("Error al actualizar contraseña");
+            if (!nuevaPassword || nuevaPassword.trim() === "") {
+                alert("Por favor ingresa una contraseña válida.");
+                return;
+            }
+            try {
+                const res = await fetch('/api/admin/password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nuevaPassword })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert("¡Contraseña actualizada con éxito!");
+                    document.getElementById('nuevaPassword').value = "";
+                } else {
+                    alert(data.error || "No se pudo actualizar la contraseña.");
+                }
+            } catch (e) {
+                alert("Error de conexión.");
             }
         }
+
+        async function cargarReservadosAdmin() {
+            const contenedor = document.getElementById('listaReservados');
+            contenedor.innerHTML = 'Cargando...';
+            try {
+                const res = await fetch('/api/boletos', { cache: 'no-store' });
+                const dataBoletos = await res.json();
+
+                let html = '';
+                for (const [id, boleto] of Object.entries(dataBoletos)) {
+                    if (typeof boleto === 'object' && boleto !== null && boleto.estado === 'RESERVADO') {
+                        html += `<div style="padding: 4px 0; border-bottom: 1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+                            <span><b>#${id}</b> - ${boleto.nombre || 'Reservado'}</span>
+                            <button onclick="aprobarPagoAdmin('${id}')" style="background:#059669; color:#fff; border:none; padding:3px 6px; border-radius:4px; cursor:pointer; font-size:11px;">Aprobar</button>
+                        </div>`;
+                    }
+                }
+                contenedor.innerHTML = html || '<p>No hay reservas activas.</p>';
+            } catch (error) {
+                contenedor.innerHTML = '<p style="color: red;">Error al cargar datos.</p>';
+            }
+        }
+
+        async function aprobarPagoAdmin(numero) {
+            try {
+                const res = await fetch(`/api/pagar/${numero}`, { method: 'POST' });
+                const data = await res.json();
+                
+                if (data.success) {
+                    alert(`¡Boleto #${numero} aprobado exitosamente!`);
+                    
+                    const resBoletos = await fetch('/api/boletos');
+                    const estadoBoletos = await resBoletos.json();
+                    const boletoInfo = estadoBoletos[numero] || {};
+                    
+                    const nombreCliente = boletoInfo.nombre || 'Cliente';
+                    const telefonoCliente = boletoInfo.telefono || '';
+                    const fechaCompra = boletoInfo.fechaCompra || new Date().toLocaleString();
+                    const fechaSorteoFormateada = formatearFechaTexto(configGlobal.fecha_sorteo);
+                    const valorTicket = `${configGlobal.simbolo_moneda || '$'}${Number(configGlobal.precio_boleto).toLocaleString()} ${configGlobal.moneda}`;
+                    const codigoSeguridad = 'MKD-' + Math.random().toString(36).substring(2, 8).toUpperCase() + '-' + numero;
+
+                    const mensaje = `============================\n COMPROBANTE OFICIAL DE RIFA   \n============================\n\n¡Hola ${nombreCliente}! Tu pago del boleto *#${numero}* ha sido confirmado.\n\n[+] Detalles de tu Ticket:\n - Fecha de compra: ${fechaCompra}\n - Lotería: ${configGlobal.loteria_nombre}\n - Fecha y hora del sorteo: ${fechaSorteoFormateada}\n - Valor del ticket: ${valorTicket}\n - Premio mayor: ${configGlobal.premio_mayor}\n - Código Antifraude: ${codigoSeguridad}\n\n¡Muchísima suerte!`;
+                    
+                    if (telefonoCliente) {
+                        const telefonoLimpiado = telefonoCliente.replace(/\D/g, '');
+                        window.open(`https://wa.me/${telefonoLimpiado}?text=${encodeURIComponent(mensaje)}`, '_blank');
+                    }
+
+                    cargarReservadosAdmin();
+                    renderizarBoletos();
+                } else {
+                    alert('No se pudo aprobar el pago.');
+                }
+            } catch (e) {
+                alert('Error de conexión con el servidor.');
+            }
+        }
+
+        window.onload = async () => {
+            mostrarFechaHoyDinamica();
+            await cargarConfiguracion();
+            await renderizarBoletos();
+        };
     </script>
 </body>
 </html>
