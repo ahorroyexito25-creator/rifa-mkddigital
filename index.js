@@ -11,35 +11,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Detectar automáticamente dónde está el frontend para evitar errores 502
-let publicDir = path.join(__dirname, 'frontend');
-if (!fs.existsSync(publicDir)) {
-    publicDir = path.join(__dirname, 'public');
-}
-if (!fs.existsSync(publicDir) && fs.existsSync(path.join(__dirname, 'index.html'))) {
-    publicDir = __dirname;
-}
-
-app.use(express.static(publicDir));
-
-app.get('/', (req, res) => {
-    const indexPath = path.join(publicDir, 'index.html');
-    if (fs.existsSync(indexPath)) {
-        res.sendFile(indexPath);
-    } else {
-        res.send(`
-            <!DOCTYPE html>
-            <html lang="es">
-            <head><meta charset="UTF-8"><title>Backend Activo</title></head>
-            <body style="font-family: Arial; text-align: center; padding-top: 50px; background: #0f172a; color: white;">
-                <h1>🚀 ¡El Servidor Backend está en línea!</h1>
-                <p>El backend funciona correctamente. Asegúrate de que tu archivo <b>index.html</b> esté en el repositorio.</p>
-            </body>
-            </html>
-        `);
-    }
-});
-
 // Ruta del archivo de base de datos en el volumen persistente de Railway
 const DATA_DIR = '/data';
 const DB_FILE = path.join(DATA_DIR, 'rifa.json');
@@ -67,7 +38,7 @@ function cargarBD() {
         const data = fs.readFileSync(DB_FILE, 'utf8');
         return JSON.parse(data);
     } catch (error) {
-        console.error('❌ Error al cargar la base de datos:', error);
+        console.error('❌ Error al cargar BD:', error);
         return {
             config: { id: 1, loteria_nombre: 'Chontico Noche', sorteo_horario: 'Lunes a Viernes - 7:00 p.m.', precio_boleto: 10000, nequi_numero: '3150000000', admin_password: '1234' },
             boletos: {},
@@ -80,30 +51,22 @@ function guardarBD(db) {
     try {
         fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), 'utf8');
     } catch (error) {
-        console.error('❌ Error al guardar la base de datos:', error);
+        console.error('❌ Error al guardar BD:', error);
     }
 }
 
-function verificarReservasExpiradas() {
-    const db = cargarBD();
-    const ahora = Date.now();
-    const tiempoLimite = 5 * 60 * 1000;
-    let modificado = false;
-
-    for (const numero in db.boletos) {
-        const boleto = db.boletos[numero];
-        if (boleto.estado === 'RESERVADO' && (ahora - boleto.fechaReserva > tiempoLimite)) {
-            delete db.boletos[numero];
-            modificado = true;
-        }
-    }
-
-    if (modificado) {
-        guardarBD(db);
-    }
-}
-
-setInterval(verificarReservasExpiradas, 30000);
+// Respuesta inmediata para que el proxy de Railway reciba 200 OK y evite el error 502
+app.get('/', (req, res) => {
+    res.json({
+        status: "online",
+        mensaje: "API Backend Rifa funcionando correctamente",
+        endpoints_disponibles: [
+            "/api/config",
+            "/api/boletos",
+            "/api/reservar"
+        ]
+    });
+});
 
 // Endpoints API
 app.get('/api/config', (req, res) => {
@@ -174,7 +137,6 @@ app.post('/api/admin/liberar/:numero', (req, res) => {
 
 app.get('/api/boletos', (req, res) => {
     try {
-        verificarReservasExpiradas();
         const db = cargarBD();
         res.json(db.boletos);
     } catch (e) {
@@ -184,7 +146,6 @@ app.get('/api/boletos', (req, res) => {
 
 app.post('/api/reservar', (req, res) => {
     try {
-        verificarReservasExpiradas();
         const db = cargarBD();
         const { numero, nombre, telefono, ciudad, email, loteria, horaSorteo, acepta_datos } = req.body;
 
