@@ -1,3 +1,5 @@
+
+
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -11,11 +13,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Carpeta donde estarán los archivos de tu interfaz web
+// Carpeta de la interfaz web
 const publicDir = path.join(__dirname, 'public');
 app.use(express.static(publicDir));
 
-// Carga automática de la página web principal si existe index.html
+// Ruta principal: sirve index.html automáticamente o avisa si falta
 app.get('/', (req, res) => {
     const indexPath = path.join(publicDir, 'index.html');
     if (fs.existsSync(indexPath)) {
@@ -23,12 +25,13 @@ app.get('/', (req, res) => {
     } else {
         res.status(200).json({ 
             status: "online", 
-            mensaje: "API Rifa Activa. Coloca tu archivo index.html dentro de una carpeta llamada 'public'." 
+            mensaje: "API Rifa Activa. El archivo index.html no se encuentra en la carpeta public." 
         });
     }
 });
 
-const DATA_DIR = '/data';
+// Configuración de base de datos compatible con local (Windows/Mac) y Railway
+const DATA_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH || path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'rifa.json');
 
 function cargarBD() {
@@ -53,6 +56,7 @@ function cargarBD() {
         }
         return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
     } catch (error) {
+        console.error('Error al cargar BD:', error);
         return {
             config: { id: 1, loteria_nombre: 'Chontico Noche', sorteo_horario: 'Lunes a Viernes - 7:00 p.m.', precio_boleto: 10000, nequi_numero: '3150000000', admin_password: '1234' },
             boletos: {},
@@ -125,7 +129,7 @@ app.post('/api/reservar', (req, res) => {
     }
 
     if (db.boletos[numero] && db.boletos[numero].estado !== 'DISPONIBLE') {
-        return res.status(400).json({ error: "El boleto ya no está disponible." });
+        return res.status(0).json({ error: "El boleto ya no está disponible." });
     }
 
     db.boletos[numero] = {
