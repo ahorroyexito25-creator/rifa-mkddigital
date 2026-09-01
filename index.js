@@ -11,11 +11,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Carpeta de la interfaz web
 const publicDir = path.join(__dirname, 'public');
 app.use(express.static(publicDir));
 
-// Ruta principal: sirve index.html automáticamente o avisa si falta
 app.get('/', (req, res) => {
     const indexPath = path.join(publicDir, 'index.html');
     if (fs.existsSync(indexPath)) {
@@ -28,7 +26,6 @@ app.get('/', (req, res) => {
     }
 });
 
-// Configuración de base de datos compatible con local y Railway
 const DATA_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH || path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'rifa.json');
 
@@ -41,11 +38,11 @@ function cargarBD() {
             const initialData = {
                 config: {
                     id: 1,
-                    pais: 'colombia', // 'colombia', 'venezuela_ves', 'venezuela_usd'
-                    moneda: 'COP',    // 'COP', 'VES', 'USD'
+                    pais: 'colombia',
+                    moneda: 'COP',
                     simbolo_moneda: '$',
                     loteria_nombre: 'Chontico Noche',
-                    sorteo_horario: '7:00 p.m. (Col) / 8:00 p.m. (Ven)',
+                    fecha_sorteo: '2026-09-05T19:00',
                     precio_boleto: 10000,
                     premio_mayor: '$1.000.000 COP',
                     nequi_numero: '3150000000',
@@ -68,7 +65,7 @@ function cargarBD() {
                 moneda: 'COP',
                 simbolo_moneda: '$',
                 loteria_nombre: 'Chontico Noche', 
-                sorteo_horario: '7:00 p.m. (Col) / 8:00 p.m. (Ven)', 
+                fecha_sorteo: '2026-09-05T19:00',
                 precio_boleto: 10000, 
                 premio_mayor: '$1.000.000 COP',
                 nequi_numero: '3150000000', 
@@ -97,13 +94,13 @@ app.get('/api/config', (req, res) => {
 
 app.post('/api/config', (req, res) => {
     const db = cargarBD();
-    const { pais, moneda, simbolo_moneda, loteria_nombre, sorteo_horario, precio_boleto, premio_mayor, nequi_numero, bancolombia_numero, pago_movil_datos } = req.body;
+    const { pais, moneda, simbolo_moneda, loteria_nombre, fecha_sorteo, precio_boleto, premio_mayor, nequi_numero, bancolombia_numero, pago_movil_datos } = req.body;
     
     db.config.pais = pais || db.config.pais;
     db.config.moneda = moneda || db.config.moneda;
     db.config.simbolo_moneda = simbolo_moneda || db.config.simbolo_moneda;
     db.config.loteria_nombre = loteria_nombre || db.config.loteria_nombre;
-    db.config.sorteo_horario = sorteo_horario || db.config.sorteo_horario;
+    db.config.fecha_sorteo = fecha_sorteo || db.config.fecha_sorteo;
     db.config.precio_boleto = precio_boleto ? Number(precio_boleto) : db.config.precio_boleto;
     db.config.premio_mayor = premio_mayor || db.config.premio_mayor;
     db.config.nequi_numero = nequi_numero !== undefined ? nequi_numero : db.config.nequi_numero;
@@ -154,7 +151,7 @@ app.get('/api/boletos', (req, res) => {
 
 app.post('/api/reservar', (req, res) => {
     const db = cargarBD();
-    const { numero, nombre, telefono, ciudad, email, loteria, horaSorteo, acepta_datos } = req.body;
+    const { numero, nombre, telefono, ciudad, email, loteria, fechaSorteo, acepta_datos } = req.body;
 
     if (!acepta_datos) {
         return res.status(400).json({ error: "Debe aceptar el tratamiento de datos." });
@@ -164,10 +161,13 @@ app.post('/api/reservar', (req, res) => {
         return res.status(400).json({ error: "El boleto ya no está disponible." });
     }
 
+    const fechaCompra = new Date().toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' });
+
     db.boletos[numero] = {
         estado: 'RESERVADO',
-        nombre, telefono, ciudad, email, loteria, horaSorteo,
-        fechaReserva: Date.now()
+        nombre, telefono, ciudad, email, loteria, fechaSorteo,
+        fechaCompra,
+        timestampReserva: Date.now()
     };
 
     db.historial.push({
