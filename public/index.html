@@ -60,11 +60,14 @@
             display: inline-flex;
             flex-direction: column;
             gap: 8px;
-            background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9));
-            padding: 12px 25px;
-            border-radius: 30px;
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
+            padding: 15px 25px;
+            border-radius: 20px;
             border: 2px solid #475569;
             box-shadow: inset 0 2px 5px rgba(255,255,255,0.1), 0 5px 15px rgba(0,0,0,0.5);
+            max-width: 500px;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         #grid-boletos {
@@ -132,7 +135,7 @@
             background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 1000;
         }
         .modal-content {
-            background: #ffffff; color: #1e293b; padding: 25px; border-radius: 12px; width: 90%; max-width: 400px; text-align: left;
+            background: #ffffff; color: #1e293b; padding: 25px; border-radius: 12px; width: 90%; max-width: 420px; text-align: left;
             box-shadow: 0 15px 35px rgba(0,0,0,0.5);
             max-height: 90vh;
             overflow-y: auto;
@@ -141,7 +144,8 @@
         .modal-content input[type="tel"],
         .modal-content input[type="email"],
         .modal-content input[type="number"],
-        .modal-content input[type="password"] {
+        .modal-content input[type="password"],
+        .modal-content select {
             width: 100%; padding: 8px 10px; margin: 6px 0; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;
         }
         .modal-buttons {
@@ -149,13 +153,24 @@
         }
         .btn-guardar { background-color: #0284c7; color: white; padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; }
         .btn-cancelar { background-color: #e11d48; color: white; padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        
+        footer {
+            text-align: center;
+            padding: 30px 10px;
+            color: #475569;
+            font-size: 13px;
+        }
+        footer a {
+            color: #334155;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        footer a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
-
-    <button onclick="abrirAdmin()" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; background: #1e293b; color: #fff; border: 2px solid #38bdf8; padding: 10px 15px; border-radius: 50px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
-        ⚙️ Admin
-    </button>
 
     <div class="header-rifa">
         <div class="dado-flotante">🎲</div>
@@ -164,42 +179,38 @@
             <span style="color: #f59e0b;">GRAN RIFA</span> CHONTICO NOCHE
         </h1>
         <div class="caja-info">
-            <p id="fechaActual" style="margin: 0; font-size: 13px; color: #e2e8f0; font-weight: 600;">📅 Fecha: Calculando...</p>
+            <div id="premioHeader" style="font-size: 15px; font-weight: 800; color: #f59e0b;">🏆 Premio Mayor: Cargando...</div>
             <div style="height: 1px; background: #475569; width: 100%;"></div>
-            <p id="horarioSorteo" style="margin: 0; font-size: 14px; font-weight: 800; color: #fbbf24;">🕒 Sorteo: Cargando...</p>
+            <div id="fechaActual" style="font-size: 13px; color: #e2e8f0; font-weight: 600;">📅 Fecha: Calculando...</div>
             <div style="height: 1px; background: #475569; width: 100%;"></div>
-            <p id="precioBoletoHeader" style="margin: 0; font-size: 14px; font-weight: 800; color: #34d399;">💰 Valor Boleto: Cargando...</p>
+            <div id="horarioSorteo" style="font-size: 13px; font-weight: 700; color: #38bdf8;">🕒 Sorteo: Cargando...</div>
+            <div style="height: 1px; background: #475569; width: 100%;"></div>
+            <div id="precioBoletoHeader" style="font-size: 14px; font-weight: 800; color: #34d399;">💰 Valor Boleto: Cargando...</div>
         </div>
     </div>
 
     <div id="grid-boletos"></div>
 
+    <footer>
+        <p>Rifa MKDDigital © 2026 - Todos los derechos reservados</p>
+        <p style="margin-top: 5px;">
+            <a href="#" onclick="abrirAdmin(); return false;">⚙️ Panel Administrativo</a>
+        </p>
+    </footer>
+
     <script>
         let configGlobal = {
+            pais: "colombia",
+            moneda: "COP",
+            simbolo_moneda: "$",
             loteria_nombre: "Chontico Noche",
-            sorteo_horario: "Lunes a Viernes - 7:00 p.m.",
+            sorteo_horario: "7:00 p.m. (Col) / 8:00 p.m. (Ven)",
             precio_boleto: 10000,
-            nequi_numero: "3150000000"
+            premio_mayor: "$1.000.000 COP",
+            nequi_numero: "3150000000",
+            bancolombia_numero: "000-00000-00",
+            pago_movil_datos: "Banco Mercantil | Tel: 0414-0000000 | C.I: V-12345678"
         };
-
-        function obtenerHorarioChontico() {
-            const ahora = new Date();
-            const dia = ahora.getDay(); // 0: Domingo, 1: Lunes, ..., 6: Sábado
-            const diasNombres = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-            const nombreDia = diasNombres[dia];
-
-            let hora = "7:00 p.m.";
-            if (dia === 6) {
-                hora = "10:00 p.m."; // Sábado 
-            } else if (dia === 0) {
-                hora = "8:00 p.m."; // Domingo 
-            }
-
-            return {
-                dia: nombreDia,
-                horario: `${nombreDia} - ${hora}`
-            };
-        }
 
         async function cargarConfiguracion() {
             try {
@@ -208,25 +219,19 @@
                 if (data && data.loteria_nombre) {
                     configGlobal = data;
                     document.getElementById('tituloLoteria').innerHTML = `<span style="color: #f59e0b;">GRAN RIFA</span> ${data.loteria_nombre}`;
-                    document.getElementById('precioBoletoHeader').textContent = `💰 Valor Boleto: $${Number(data.precio_boleto).toLocaleString()}`;
+                    document.getElementById('premioHeader').innerHTML = `🏆 Premio Mayor: ${data.premio_mayor || '$1.000.000'}`;
+                    document.getElementById('precioBoletoHeader').textContent = `💰 Valor Boleto: ${data.simbolo_moneda || '$'}${Number(data.precio_boleto).toLocaleString()} ${data.moneda}`;
+                    document.getElementById('horarioSorteo').innerHTML = `🕒 Sorteo: <b>Colombia</b> (7:00 p.m.) | <b>Venezuela</b> (8:00 p.m.)`;
                 }
             } catch (e) {
                 console.error("Error al cargar configuración dinámica:", e);
             }
-            
-            // Aplicar el horario automático basado en el día actual
-            const horarioInfo = obtenerHorarioChontico();
-            document.getElementById('horarioSorteo').textContent = `🕒 Sorteo: ${configGlobal.loteria_nombre} (${horarioInfo.horario})`;
         }
 
         function actualizarFecha() {
             const ahora = new Date();
             const opcionesFecha = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            document.getElementById('fechaActual').textContent = "📅 Fecha: " + ahora.toLocaleDateString('es-ES', opcionesFecha);
-            
-            // Refrescar también el horario automático en caso de cambio de día en vivo
-            const horarioInfo = obtenerHorarioChontico();
-            document.getElementById('horarioSorteo').textContent = `🕒 Sorteo: ${configGlobal.loteria_nombre} (${horarioInfo.horario})`;
+            document.getElementById('fechaActual').textContent = "📅 Fecha del Sorteo: " + ahora.toLocaleDateString('es-ES', opcionesFecha);
         }
         
         actualizarFecha();
@@ -277,20 +282,27 @@
         function abrirModalReserva(numeroBoleto) {
             if (document.getElementById('modal-comprador')) document.getElementById('modal-comprador').remove();
 
-            const horarioInfo = obtenerHorarioChontico();
+            let infoPagoTexto = '';
+            if (configGlobal.pais === 'colombia' || configGlobal.moneda === 'COP') {
+                infoPagoTexto = `Paga vía <b>Nequi</b> (${configGlobal.nequi_numero}) o <b>Bancolombia</b> (${configGlobal.bancolombia_numero}) con código QR o transferencia.`;
+            } else {
+                infoPagoTexto = `Paga vía <b>Pago Móvil</b>:<br><small>${configGlobal.pago_movil_datos}</small>`;
+            }
 
             const modalHtml = `
                 <div id="modal-comprador" class="modal">
                     <div class="modal-content">
                         <h2 style="text-align: center; margin-top:0;">${configGlobal.loteria_nombre} 🎟️</h2>
-                        <h3 style="text-align: center; color: #0284c7;">Reservar Boleto: #${numeroBoleto}</h3>
-                        <p style="font-size: 13px; color: #555; text-align: center;">
-                            Valor: <strong>$${Number(configGlobal.precio_boleto).toLocaleString()}</strong>. Paga vía Nequi al <strong>${configGlobal.nequi_numero}</strong>. Tienes <strong>5 minutos</strong>.
+                        <h3 style="text-align: center; color: #0284c7; margin: 5px 0;">Reservar Boleto: #${numeroBoleto}</h3>
+                        <p style="font-size: 13px; color: #334155; text-align: center; background: #f1f5f9; padding: 10px; border-radius: 6px;">
+                            Valor: <strong>${configGlobal.simbolo_moneda || '$'}${Number(configGlobal.precio_boleto).toLocaleString()} ${configGlobal.moneda}</strong><br>
+                            ${infoPagoTexto}<br>
+                            <span style="color: #e11d48; font-weight: bold;">Tienes 5 minutos para reportar tu pago.</span>
                         </p>
                         <form id="form-reserva">
                             <input type="text" id="nombre" placeholder="Nombre completo" required />
-                            <input type="tel" id="telefono" placeholder="Teléfono / WhatsApp (ej: 3001234567)" required />
-                            <input type="text" id="ciudad" placeholder="Ciudad" required />
+                            <input type="tel" id="telefono" placeholder="Teléfono / WhatsApp (ej: +57... o +58...)" required />
+                            <input type="text" id="ciudad" placeholder="Ciudad / Estado" required />
                             <input type="email" id="email" placeholder="Correo electrónico" required />
                             
                             <div style="margin: 10px 0; font-size: 12px; display: flex; align-items: flex-start; gap: 8px;">
@@ -320,7 +332,7 @@
                     ciudad: document.getElementById('ciudad').value,
                     email: document.getElementById('email').value,
                     loteria: configGlobal.loteria_nombre,
-                    horaSorteo: horarioInfo.horario,
+                    horaSorteo: configGlobal.sorteo_horario,
                     acepta_datos: document.getElementById('acepta-datos').checked
                 };
 
@@ -363,20 +375,40 @@
                         </div>
 
                         <div id="divContenidoAdmin" style="display: none;">
-                            <h4 style="color: #333; margin-bottom: 5px;">⚙️ Configurar Rifa</h4>
+                            <h4 style="color: #333; margin-bottom: 5px;">🌍 Selección de Mercado / País</h4>
+                            <select id="adminPais" onchange="cambiarPlantillaPais()" class="input-control">
+                                <option value="colombia">Colombia (COP - Nequi / Bancolombia)</option>
+                                <option value="venezuela_ves">Venezuela (Bolívares - Pago Móvil)</option>
+                                <option value="venezuela_usd">Venezuela (Dólares USD - Divisas)</option>
+                            </select>
+
+                            <h4 style="color: #333; margin: 10px 0 5px 0;">⚙️ Configuración General</h4>
                             <label style="font-size:11px; font-weight:bold;">Nombre Lotería:</label>
                             <input type="text" id="adminLoteria" value="${configGlobal.loteria_nombre}" />
                             
-                            <label style="font-size:11px; font-weight:bold;">Horario Sorteo (Texto Base):</label>
-                            <input type="text" id="adminHorario" value="${configGlobal.sorteo_horario}" />
-                            
-                            <label style="font-size:11px; font-weight:bold;">Precio Boleto ($):</label>
+                            <label style="font-size:11px; font-weight:bold;">Premio Mayor (Texto e importe):</label>
+                            <input type="text" id="adminPremio" value="${configGlobal.premio_mayor}" />
+
+                            <label style="font-size:11px; font-weight:bold;">Precio del Boleto:</label>
                             <input type="number" id="adminPrecio" value="${configGlobal.precio_boleto}" />
-                            
-                            <label style="font-size:11px; font-weight:bold;">Número Nequi:</label>
+
+                            <label style="font-size:11px; font-weight:bold;">Símbolo Moneda ($ / Bs):</label>
+                            <input type="text" id="adminSimbolo" value="${configGlobal.simbolo_moneda}" />
+
+                            <label style="font-size:11px; font-weight:bold;">Código Moneda (COP / VES / USD):</label>
+                            <input type="text" id="adminMoneda" value="${configGlobal.moneda}" />
+
+                            <h4 style="color: #333; margin: 10px 0 5px 0;">💳 Datos de Pago</h4>
+                            <label style="font-size:11px; font-weight:bold;">Número Nequi (Colombia):</label>
                             <input type="text" id="adminNequi" value="${configGlobal.nequi_numero}" />
 
-                            <button type="button" class="btn-guardar" onclick="guardarConfiguracionAdmin()" style="margin-top: 5px;">Guardar Cambios</button>
+                            <label style="font-size:11px; font-weight:bold;">Número Bancolombia (Colombia):</label>
+                            <input type="text" id="adminBancolombia" value="${configGlobal.bancolombia_numero}" />
+
+                            <label style="font-size:11px; font-weight:bold;">Datos Pago Móvil (Venezuela):</label>
+                            <input type="text" id="adminPagoMovil" value="${configGlobal.pago_movil_datos}" />
+
+                            <button type="button" class="btn-guardar" onclick="guardarConfiguracionAdmin()" style="margin-top: 10px;">Guardar Cambios</button>
 
                             <h4 style="color: #333; margin: 15px 0 5px 0;">🎟️ Reservas Pendientes</h4>
                             <div id="listaReservados" style="max-height: 120px; overflow-y: auto; font-size: 12px; border: 1px solid #cbd5e1; padding: 6px; border-radius: 6px;">Cargando...</div>
@@ -395,6 +427,27 @@
                 </div>
             `;
             document.body.insertAdjacentHTML('beforeend', modalAdminHtml);
+            document.getElementById('adminPais').value = configGlobal.pais || 'colombia';
+        }
+
+        function cambiarPlantillaPais() {
+            const paisSel = document.getElementById('adminPais').value;
+            if (paisSel === 'colombia') {
+                document.getElementById('adminMoneda').value = 'COP';
+                document.getElementById('adminSimbolo').value = '$';
+                document.getElementById('adminPrecio').value = '10000';
+                document.getElementById('adminPremio').value = '$1.000.000 COP';
+            } else if (paisSel === 'venezuela_ves') {
+                document.getElementById('adminMoneda').value = 'VES';
+                document.getElementById('adminSimbolo').value = 'Bs. ';
+                document.getElementById('adminPrecio').value = '50';
+                document.getElementById('adminPremio').value = '5.000 Bs.';
+            } else if (paisSel === 'venezuela_usd') {
+                document.getElementById('adminMoneda').value = 'USD';
+                document.getElementById('adminSimbolo').value = '$';
+                document.getElementById('adminPrecio').value = '3';
+                document.getElementById('adminPremio').value = '$300 USD';
+            }
         }
 
         function togglePassword() {
@@ -432,10 +485,16 @@
 
         async function guardarConfiguracionAdmin() {
             const datosConfig = {
+                pais: document.getElementById('adminPais').value,
                 loteria_nombre: document.getElementById('adminLoteria').value,
-                sorteo_horario: document.getElementById('adminHorario').value,
+                premio_mayor: document.getElementById('adminPremio').value,
+                sorteo_horario: '7:00 p.m. (Col) / 8:00 p.m. (Ven)',
                 precio_boleto: document.getElementById('adminPrecio').value,
-                nequi_numero: document.getElementById('adminNequi').value
+                simbolo_moneda: document.getElementById('adminSimbolo').value,
+                moneda: document.getElementById('adminMoneda').value,
+                nequi_numero: document.getElementById('adminNequi').value,
+                bancolombia_numero: document.getElementById('adminBancolombia').value,
+                pago_movil_datos: document.getElementById('adminPagoMovil').value
             };
 
             try {
@@ -514,13 +573,12 @@
                     const resBoletos = await fetch('/api/boletos');
                     const estadoBoletos = await resBoletos.json();
                     const boletoInfo = estadoBoletos[numero] || {};
-                    const horarioInfo = obtenerHorarioChontico();
                     
                     const nombreCliente = boletoInfo.nombre || 'Cliente';
                     const telefonoCliente = boletoInfo.telefono || '';
                     const codigoSeguridad = 'MKD-' + Math.random().toString(36).substring(2, 8).toUpperCase() + '-' + numero;
 
-                    const mensaje = `============================\n COMPROBANTE OFICIAL DE RIFA   \n============================\n\n¡Hola ${nombreCliente}! Tu pago del boleto *${numero}* para la *${configGlobal.loteria_nombre}* ha sido confirmado.\n\n[+] Detalles:\n - Lotería: ${configGlobal.loteria_nombre}\n - Horario: ${horarioInfo.horario}\n - Código Antifraude: ${codigoSeguridad}\n\n¡Muchísima suerte!`;
+                    const mensaje = `============================\n COMPROBANTE OFICIAL DE RIFA   \n============================\n\n¡Hola ${nombreCliente}! Tu pago del boleto *${numero}* para la *${configGlobal.loteria_nombre}* ha sido confirmado.\n\n[+] Detalles:\n - Lotería: ${configGlobal.loteria_nombre}\n - Premio Mayor: ${configGlobal.premio_mayor}\n - Código Antifraude: ${codigoSeguridad}\n\n¡Muchísima suerte!`;
                     
                     if (telefonoCliente) {
                         const telefonoLimpiado = telefonoCliente.replace(/\D/g, '');
