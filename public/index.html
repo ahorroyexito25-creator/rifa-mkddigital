@@ -503,10 +503,10 @@
                     document.getElementById('divContenidoAdmin').style.display = 'block';
                     cargarReservasAdmin();
                 } else {
-                    alert(data.error || "Contraseña incorrecta");
+                    alert('Contraseña incorrecta');
                 }
             } catch (e) {
-                alert("Error de conexión");
+                alert('Error de conexión');
             }
         }
 
@@ -515,40 +515,44 @@
                 const res = await fetch('/api/boletos');
                 const boletos = await res.json();
                 const contenedor = document.getElementById('listaReservados');
-                if (!contenedor) return;
-
-                let html = '';
-                let hayReservas = false;
-                for (const [num, data] of Object.entries(boletos)) {
-                    if (data.estado === 'RESERVADO' || data.estado === 'PAGADO' || data.estado === 'JUGANDO') {
-                        hayReservas = true;
-                        html += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; border-bottom: 1px solid #e2e8f0; padding-bottom: 3px;">
-                            <span>#<b>${num}</b> - ${data.nombre} (${data.estado})</span>
+                contenedor.innerHTML = '';
+                
+                let count = 0;
+                for (let num in boletos) {
+                    const b = boletos[num];
+                    if (b && (b.estado === 'RESERVADO' || b.estado === 'PAGADO')) {
+                        count++;
+                        const divItem = document.createElement('div');
+                        divItem.style.cssText = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 3px;";
+                        divItem.innerHTML = `
+                            <span><b>#${num}</b> - ${b.nombre} (${b.estado})</span>
                             <div>
-                                ${data.estado === 'RESERVADO' ? `<button onclick="marcarPagado('${num}')" style="background:#059669; color:white; border:none; padding:2px 6px; border-radius:4px; cursor:pointer; font-size:10px; margin-right:4px;">Aprobar</button>` : ''}
-                                <button onclick="liberarBoleto('${num}')" style="background:#dc2626; color:white; border:none; padding:2px 6px; border-radius:4px; cursor:pointer; font-size:10px;">Liberar</button>
+                                ${b.estado === 'RESERVADO' ? `<button onclick="marcarPagado('${num}')" style="background:#059669; color:white; border:none; padding:2px 6px; border-radius:4px; cursor:pointer; font-size:11px; margin-right:4px;">Aprobar</button>` : ''}
+                                <button onclick="liberarBoleto('${num}')" style="background:#e11d48; color:white; border:none; padding:2px 6px; border-radius:4px; cursor:pointer; font-size:11px;">Liberar</button>
                             </div>
-                        </div>`;
+                        `;
+                        contenedor.appendChild(divItem);
                     }
                 }
-                contenedor.innerHTML = hayReservas ? html : 'No hay boletos reservados o pagados actualmente.';
+                if (count === 0) {
+                    contenedor.innerHTML = '<i>No hay boletos reservados o pagados actualmente.</i>';
+                }
             } catch (e) {
-                console.error("Error al cargar reservas:", e);
+                console.error("Error al cargar lista admin:", e);
             }
         }
 
         async function marcarPagado(numero) {
             try {
                 const res = await fetch(`/api/pagar/${numero}`, { method: 'POST' });
-                const data = await res.json();
-                if (data.success) {
+                if (res.ok) {
                     cargarReservasAdmin();
                     renderizarBoletos();
                 } else {
-                    alert("No se pudo actualizar el pago.");
+                    alert('Error al actualizar boleto');
                 }
             } catch (e) {
-                alert("Error de conexión.");
+                alert('Error de conexión');
             }
         }
 
@@ -556,15 +560,14 @@
             if (!confirm(`¿Estás seguro de liberar el boleto #${numero}?`)) return;
             try {
                 const res = await fetch(`/api/admin/liberar/${numero}`, { method: 'POST' });
-                const data = await res.json();
-                if (data.success) {
+                if (res.ok) {
                     cargarReservasAdmin();
                     renderizarBoletos();
                 } else {
-                    alert("No se pudo liberar el boleto.");
+                    alert('Error al liberar boleto');
                 }
             } catch (e) {
-                alert("Error de conexión.");
+                alert('Error de conexión');
             }
         }
 
@@ -588,24 +591,23 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(datos)
                 });
-                const data = await res.json();
-                if (data.success) {
-                    alert("Configuración guardada exitosamente.");
+                if (res.ok) {
+                    alert('Configuración guardada exitosamente');
                     document.getElementById('modalAdmin').remove();
                     cargarConfiguracion();
                     renderizarBoletos();
                 } else {
-                    alert("Error al guardar la configuración.");
+                    alert('Error al guardar la configuración');
                 }
             } catch (e) {
-                alert("Error de conexión.");
+                alert('Error de conexión');
             }
         }
 
         async function actualizarPassword() {
             const nuevaPassword = document.getElementById('nuevaPassword').value;
-            if (!nuevaPassword.trim()) {
-                alert("Ingrese una contraseña válida.");
+            if (!nuevaPassword) {
+                alert('Ingrese una contraseña válida');
                 return;
             }
             try {
@@ -616,13 +618,13 @@
                 });
                 const data = await res.json();
                 if (data.success) {
-                    alert("Contraseña actualizada exitosamente.");
+                    alert('Contraseña actualizada correctamente');
                     document.getElementById('nuevaPassword').value = '';
                 } else {
-                    alert(data.error || "Error al actualizar contraseña.");
+                    alert(data.error || 'Error al actualizar contraseña');
                 }
             } catch (e) {
-                alert("Error de conexión.");
+                alert('Error de conexión');
             }
         }
 
