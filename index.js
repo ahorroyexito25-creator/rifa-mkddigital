@@ -11,7 +11,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Ruta del archivo de base de datos en el volumen persistente de Railway
 const DATA_DIR = '/data';
 const DB_FILE = path.join(DATA_DIR, 'rifa.json');
 
@@ -35,10 +34,8 @@ function cargarBD() {
             };
             fs.writeFileSync(DB_FILE, JSON.stringify(initialData, null, 2), 'utf8');
         }
-        const data = fs.readFileSync(DB_FILE, 'utf8');
-        return JSON.parse(data);
+        return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
     } catch (error) {
-        console.error('❌ Error al cargar BD:', error);
         return {
             config: { id: 1, loteria_nombre: 'Chontico Noche', sorteo_horario: 'Lunes a Viernes - 7:00 p.m.', precio_boleto: 10000, nequi_numero: '3150000000', admin_password: '1234' },
             boletos: {},
@@ -51,158 +48,102 @@ function guardarBD(db) {
     try {
         fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), 'utf8');
     } catch (error) {
-        console.error('❌ Error al guardar BD:', error);
+        console.error('Error al guardar BD:', error);
     }
 }
 
-// Respuesta inmediata para que el proxy de Railway reciba 200 OK y evite el error 502
+// Ruta raíz directa para Railway
 app.get('/', (req, res) => {
+    res.status(200).json({ status: "online", mensaje: "API Rifa Activa" });
+});
+
+app.get('/api/config', (req, res) => {
+    const db = cargarBD();
     res.json({
-        status: "online",
-        mensaje: "API Backend Rifa funcionando correctamente",
-        endpoints_disponibles: [
-            "/api/config",
-            "/api/boletos",
-            "/api/reservar"
-        ]
+        loteria_nombre: db.config.loteria_nombre,
+        sorteo_horario: db.config.sorteo_horario,
+        precio_boleto: db.config.precio_boleto,
+        nequi_numero: db.config.nequi_numero
     });
 });
 
-// Endpoints API
-app.get('/api/config', (req, res) => {
-    try {
-        const db = cargarBD();
-        res.json({
-            loteria_nombre: db.config.loteria_nombre,
-            sorteo_horario: db.config.sorteo_horario,
-            precio_boleto: db.config.precio_boleto,
-            nequi_numero: db.config.nequi_numero
-        });
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
-});
-
 app.post('/api/config', (req, res) => {
-    try {
-        const db = cargarBD();
-        const { loteria_nombre, sorteo_horario, precio_boleto, nequi_numero } = req.body;
-        db.config.loteria_nombre = loteria_nombre || db.config.loteria_nombre;
-        db.config.sorteo_horario = sorteo_horario || db.config.sorteo_horario;
-        db.config.precio_boleto = precio_boleto ? Number(precio_boleto) : db.config.precio_boleto;
-        db.config.nequi_numero = nequi_numero || db.config.nequi_numero;
-        guardarBD(db);
-        res.json({ success: true });
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
+    const db = cargarBD();
+    const { loteria_nombre, sorteo_horario, precio_boleto, nequi_numero } = req.body;
+    db.config.loteria_nombre = loteria_nombre || db.config.loteria_nombre;
+    db.config.sorteo_horario = sorteo_horario || db.config.sorteo_horario;
+    db.config.precio_boleto = precio_boleto ? Number(precio_boleto) : db.config.precio_boleto;
+    db.config.nequi_numero = nequi_numero || db.config.nequi_numero;
+    guardarBD(db);
+    res.json({ success: true });
 });
 
 app.post('/api/admin/login', (req, res) => {
-    try {
-        const db = cargarBD();
-        const { password } = req.body;
-        if (db.config.admin_password === password) {
-            res.json({ success: true });
-        } else {
-            res.status(401).json({ success: false, error: "Contraseña incorrecta" });
-        }
-    } catch (e) {
-        res.status(500).json({ error: e.message });
+    const db = cargarBD();
+    if (db.config.admin_password === req.body.password) {
+        res.json({ success: true });
+    } else {
+        res.status(401).json({ success: false, error: "Contraseña incorrecta" });
     }
 });
 
 app.get('/api/admin/historial', (req, res) => {
-    try {
-        const db = cargarBD();
-        res.json([...db.historial].reverse());
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
+    const db = cargarBD();
+    res.json([...db.historial].reverse());
 });
 
 app.post('/api/admin/liberar/:numero', (req, res) => {
-    try {
-        const db = cargarBD();
-        const { numero } = req.params;
-        if (db.boletos[numero]) {
-            delete db.boletos[numero];
-            guardarBD(db);
-        }
-        res.json({ success: true });
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
+    const db = cargarBD();
+    delete db.boletos[req.params.numero];
+    guardarBD(db);
+    res.json({ success: true });
 });
 
 app.get('/api/boletos', (req, res) => {
-    try {
-        const db = cargarBD();
-        res.json(db.boletos);
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
+    const db = cargarBD();
+    res.json(db.boletos);
 });
 
 app.post('/api/reservar', (req, res) => {
-    try {
-        const db = cargarBD();
-        const { numero, nombre, telefono, ciudad, email, loteria, horaSorteo, acepta_datos } = req.body;
+    const db = cargarBD();
+    const { numero, nombre, telefono, ciudad, email, loteria, horaSorteo, acepta_datos } = req.body;
 
-        if (!acepta_datos) {
-            return res.status(400).json({ error: "Debe aceptar el tratamiento de datos." });
-        }
-
-        if (db.boletos[numero] && db.boletos[numero].estado !== 'DISPONIBLE') {
-            return res.status(400).json({ error: "El boleto ya no está disponible." });
-        }
-
-        db.boletos[numero] = {
-            estado: 'RESERVADO',
-            nombre,
-            telefono,
-            ciudad,
-            email,
-            loteria,
-            horaSorteo,
-            fechaReserva: Date.now()
-        };
-
-        db.historial.push({
-            id: db.historial.length + 1,
-            numero,
-            nombre,
-            telefono,
-            ciudad,
-            email,
-            loteria,
-            fecha: new Date().toISOString()
-        });
-
-        guardarBD(db);
-        res.json({ success: true });
-    } catch (e) {
-        res.status(500).json({ error: e.message });
+    if (!acepta_datos) {
+        return res.status(400).json({ error: "Debe aceptar el tratamiento de datos." });
     }
+
+    if (db.boletos[numero] && db.boletos[numero].estado !== 'DISPONIBLE') {
+        return res.status(400).json({ error: "El boleto ya no está disponible." });
+    }
+
+    db.boletos[numero] = {
+        estado: 'RESERVADO',
+        nombre, telefono, ciudad, email, loteria, horaSorteo,
+        fechaReserva: Date.now()
+    };
+
+    db.historial.push({
+        id: db.historial.length + 1,
+        numero, nombre, telefono, ciudad, email, loteria,
+        fecha: new Date().toISOString()
+    });
+
+    guardarBD(db);
+    res.json({ success: true });
 });
 
 app.post('/api/pagar/:numero', (req, res) => {
-    try {
-        const db = cargarBD();
-        const { numero } = req.params;
-        if (db.boletos[numero]) {
-            db.boletos[numero].estado = 'PAGADO';
-            guardarBD(db);
-            res.json({ success: true });
-        } else {
-            res.status(404).json({ success: false });
-        }
-    } catch (e) {
-        res.status(500).json({ error: e.message });
+    const db = cargarBD();
+    if (db.boletos[req.params.numero]) {
+        db.boletos[req.params.numero].estado = 'PAGADO';
+        guardarBD(db);
+        res.json({ success: true });
+    } else {
+        res.status(404).json({ success: false });
     }
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
+    console.log(`Servidor corriendo en puerto ${PORT}`);
 });
