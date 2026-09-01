@@ -161,7 +161,15 @@ app.post('/api/reservar', (req, res) => {
         return res.status(400).json({ error: "El boleto ya no está disponible." });
     }
 
-    const fechaCompra = new Date().toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' });
+    // Formato de hora en 12 horas (AM/PM)
+    const fechaCompra = new Date().toLocaleString('es-ES', { 
+        day: 'numeric', 
+        month: 'short', 
+        year: 'numeric', 
+        hour: 'numeric', 
+        minute: '2-digit', 
+        hour12: true 
+    });
 
     db.boletos[numero] = {
         estado: 'RESERVADO',
