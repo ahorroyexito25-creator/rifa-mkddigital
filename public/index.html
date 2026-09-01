@@ -180,7 +180,6 @@
             <span style="color: #f59e0b;">GRAN RIFA</span> CHONTICO NOCHE
         </h1>
         <div class="caja-info">
-            <!-- Fecha de hoy exacta y actualizada automáticamente -->
             <div id="fechaHoyHeader" style="font-size: 12px; color: #38bdf8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">📅 Hoy: Cargando...</div>
             <div style="height: 1px; background: #475569; width: 100%;"></div>
             <div id="premioHeader" style="font-size: 15px; font-weight: 800; color: #f59e0b;">🏆 Premio Mayor: Cargando...</div>
@@ -224,7 +223,6 @@
             const mes = meses[ahora.getMonth()];
             const anio = ahora.getFullYear();
             
-            // Formato exacto solicitado: MARTES 1 DE SEPTIEMBRE DEL 2026
             const texto = `${diaSemana} ${diaNum} de ${mes} del ${anio}`.toUpperCase();
             const el = document.getElementById('fechaHoyHeader');
             if (el) {
@@ -503,22 +501,80 @@
                 if (data.success) {
                     document.getElementById('divLogin').style.display = 'none';
                     document.getElementById('divContenidoAdmin').style.display = 'block';
-                    cargarReservadosAdmin();
+                    cargarReservasAdmin();
                 } else {
-                    alert('Contraseña incorrecta');
+                    alert(data.error || "Contraseña incorrecta");
                 }
             } catch (e) {
-                alert('Error al verificar credenciales.');
+                alert("Error de conexión");
+            }
+        }
+
+        async function cargarReservasAdmin() {
+            try {
+                const res = await fetch('/api/boletos');
+                const boletos = await res.json();
+                const contenedor = document.getElementById('listaReservados');
+                if (!contenedor) return;
+
+                let html = '';
+                let hayReservas = false;
+                for (const [num, data] of Object.entries(boletos)) {
+                    if (data.estado === 'RESERVADO' || data.estado === 'PAGADO' || data.estado === 'JUGANDO') {
+                        hayReservas = true;
+                        html += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; border-bottom: 1px solid #e2e8f0; padding-bottom: 3px;">
+                            <span>#<b>${num}</b> - ${data.nombre} (${data.estado})</span>
+                            <div>
+                                ${data.estado === 'RESERVADO' ? `<button onclick="marcarPagado('${num}')" style="background:#059669; color:white; border:none; padding:2px 6px; border-radius:4px; cursor:pointer; font-size:10px; margin-right:4px;">Aprobar</button>` : ''}
+                                <button onclick="liberarBoleto('${num}')" style="background:#dc2626; color:white; border:none; padding:2px 6px; border-radius:4px; cursor:pointer; font-size:10px;">Liberar</button>
+                            </div>
+                        </div>`;
+                    }
+                }
+                contenedor.innerHTML = hayReservas ? html : 'No hay boletos reservados o pagados actualmente.';
+            } catch (e) {
+                console.error("Error al cargar reservas:", e);
+            }
+        }
+
+        async function marcarPagado(numero) {
+            try {
+                const res = await fetch(`/api/pagar/${numero}`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    cargarReservasAdmin();
+                    renderizarBoletos();
+                } else {
+                    alert("No se pudo actualizar el pago.");
+                }
+            } catch (e) {
+                alert("Error de conexión.");
+            }
+        }
+
+        async function liberarBoleto(numero) {
+            if (!confirm(`¿Estás seguro de liberar el boleto #${numero}?`)) return;
+            try {
+                const res = await fetch(`/api/admin/liberar/${numero}`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    cargarReservasAdmin();
+                    renderizarBoletos();
+                } else {
+                    alert("No se pudo liberar el boleto.");
+                }
+            } catch (e) {
+                alert("Error de conexión.");
             }
         }
 
         async function guardarConfiguracionAdmin() {
-            const datosConfig = {
+            const datos = {
                 pais: document.getElementById('adminPais').value,
                 loteria_nombre: document.getElementById('adminLoteria').value,
                 premio_mayor: document.getElementById('adminPremio').value,
                 fecha_sorteo: document.getElementById('adminFechaSorteo').value,
-                precio_boleto: document.getElementById('adminPrecio').value,
+                precio_boleto: Number(document.getElementById('adminPrecio').value),
                 simbolo_moneda: document.getElementById('adminSimbolo').value,
                 moneda: document.getElementById('adminMoneda').value,
                 nequi_numero: document.getElementById('adminNequi').value,
@@ -530,25 +586,26 @@
                 const res = await fetch('/api/config', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(datosConfig)
+                    body: JSON.stringify(datos)
                 });
                 const data = await res.json();
                 if (data.success) {
-                    alert('¡Configuración actualizada con éxito!');
-                    await cargarConfiguracion();
+                    alert("Configuración guardada exitosamente.");
                     document.getElementById('modalAdmin').remove();
+                    cargarConfiguracion();
+                    renderizarBoletos();
                 } else {
-                    alert('Error al guardar configuración.');
+                    alert("Error al guardar la configuración.");
                 }
             } catch (e) {
-                alert('Error de conexión con el servidor.');
+                alert("Error de conexión.");
             }
         }
 
         async function actualizarPassword() {
             const nuevaPassword = document.getElementById('nuevaPassword').value;
-            if (!nuevaPassword || nuevaPassword.trim() === "") {
-                alert("Por favor ingresa una contraseña válida.");
+            if (!nuevaPassword.trim()) {
+                alert("Ingrese una contraseña válida.");
                 return;
             }
             try {
@@ -559,78 +616,21 @@
                 });
                 const data = await res.json();
                 if (data.success) {
-                    alert("¡Contraseña actualizada con éxito!");
-                    document.getElementById('nuevaPassword').value = "";
+                    alert("Contraseña actualizada exitosamente.");
+                    document.getElementById('nuevaPassword').value = '';
                 } else {
-                    alert(data.error || "No se pudo actualizar la contraseña.");
+                    alert(data.error || "Error al actualizar contraseña.");
                 }
             } catch (e) {
                 alert("Error de conexión.");
             }
         }
 
-        async function cargarReservadosAdmin() {
-            const contenedor = document.getElementById('listaReservados');
-            contenedor.innerHTML = 'Cargando...';
-            try {
-                const res = await fetch('/api/boletos', { cache: 'no-store' });
-                const dataBoletos = await res.json();
-
-                let html = '';
-                for (const [id, boleto] of Object.entries(dataBoletos)) {
-                    if (typeof boleto === 'object' && boleto !== null && boleto.estado === 'RESERVADO') {
-                        html += `<div style="padding: 4px 0; border-bottom: 1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
-                            <span><b>#${id}</b> - ${boleto.nombre || 'Reservado'}</span>
-                            <button onclick="aprobarPagoAdmin('${id}')" style="background:#059669; color:#fff; border:none; padding:3px 6px; border-radius:4px; cursor:pointer; font-size:11px;">Aprobar</button>
-                        </div>`;
-                    }
-                }
-                contenedor.innerHTML = html || '<p>No hay reservas activas.</p>';
-            } catch (error) {
-                contenedor.innerHTML = '<p style="color: red;">Error al cargar datos.</p>';
-            }
-        }
-
-        async function aprobarPagoAdmin(numero) {
-            try {
-                const res = await fetch(`/api/pagar/${numero}`, { method: 'POST' });
-                const data = await res.json();
-                
-                if (data.success) {
-                    alert(`¡Boleto #${numero} aprobado exitosamente!`);
-                    
-                    const resBoletos = await fetch('/api/boletos');
-                    const estadoBoletos = await resBoletos.json();
-                    const boletoInfo = estadoBoletos[numero] || {};
-                    
-                    const nombreCliente = boletoInfo.nombre || 'Cliente';
-                    const telefonoCliente = boletoInfo.telefono || '';
-                    const fechaCompra = boletoInfo.fechaCompra || new Date().toLocaleString();
-                    const fechaSorteoFormateada = formatearFechaTexto(configGlobal.fecha_sorteo);
-                    const valorTicket = `${configGlobal.simbolo_moneda || '$'}${Number(configGlobal.precio_boleto).toLocaleString()} ${configGlobal.moneda}`;
-                    const codigoSeguridad = 'MKD-' + Math.random().toString(36).substring(2, 8).toUpperCase() + '-' + numero;
-
-                    const mensaje = `============================\n COMPROBANTE OFICIAL DE RIFA   \n============================\n\n¡Hola ${nombreCliente}! Tu pago del boleto *#${numero}* ha sido confirmado.\n\n[+] Detalles de tu Ticket:\n - Fecha de compra: ${fechaCompra}\n - Lotería: ${configGlobal.loteria_nombre}\n - Fecha y hora del sorteo: ${fechaSorteoFormateada}\n - Valor del ticket: ${valorTicket}\n - Premio mayor: ${configGlobal.premio_mayor}\n - Código Antifraude: ${codigoSeguridad}\n\n¡Muchísima suerte!`;
-                    
-                    if (telefonoCliente) {
-                        const telefonoLimpiado = telefonoCliente.replace(/\D/g, '');
-                        window.open(`https://wa.me/${telefonoLimpiado}?text=${encodeURIComponent(mensaje)}`, '_blank');
-                    }
-
-                    cargarReservadosAdmin();
-                    renderizarBoletos();
-                } else {
-                    alert('No se pudo aprobar el pago.');
-                }
-            } catch (e) {
-                alert('Error de conexión con el servidor.');
-            }
-        }
-
-        window.onload = async () => {
+        window.onload = () => {
             mostrarFechaHoyDinamica();
-            await cargarConfiguracion();
-            await renderizarBoletos();
+            cargarConfiguracion();
+            renderizarBoletos();
+            setInterval(renderizarBoletos, 10000);
         };
     </script>
 </body>
