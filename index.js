@@ -10,17 +10,40 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'frontend')));
+
+// Detectar automáticamente dónde está el frontend para evitar errores 502
+let publicDir = path.join(__dirname, 'frontend');
+if (!fs.existsSync(publicDir)) {
+    publicDir = path.join(__dirname, 'public');
+}
+if (!fs.existsSync(publicDir) && fs.existsSync(path.join(__dirname, 'index.html'))) {
+    publicDir = __dirname;
+}
+
+app.use(express.static(publicDir));
 
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
+    const indexPath = path.join(publicDir, 'index.html');
+    if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+    } else {
+        res.send(`
+            <!DOCTYPE html>
+            <html lang="es">
+            <head><meta charset="UTF-8"><title>Backend Activo</title></head>
+            <body style="font-family: Arial; text-align: center; padding-top: 50px; background: #0f172a; color: white;">
+                <h1>🚀 ¡El Servidor Backend está en línea!</h1>
+                <p>El backend funciona correctamente. Asegúrate de que tu archivo <b>index.html</b> esté en el repositorio.</p>
+            </body>
+            </html>
+        `);
+    }
 });
 
-// Ruta del archivo de base de datos en el volumen persistente
+// Ruta del archivo de base de datos en el volumen persistente de Railway
 const DATA_DIR = '/data';
 const DB_FILE = path.join(DATA_DIR, 'rifa.json');
 
-// Inicializar estructura de datos por defecto
 function cargarBD() {
     try {
         if (!fs.existsSync(DATA_DIR)) {
@@ -36,11 +59,10 @@ function cargarBD() {
                     nequi_numero: '3150000000',
                     admin_password: '1234'
                 },
-                boletos: {}, // { "00": { estado, nombre, telefono, ciudad, email, loteria, horaSorteo, fechaReserva } }
-                historial: [] // Array de registros
+                boletos: {},
+                historial: []
             };
             fs.writeFileSync(DB_FILE, JSON.stringify(initialData, null, 2), 'utf8');
-            console.log('✅ Archivo de base de datos JSON creado exitosamente.');
         }
         const data = fs.readFileSync(DB_FILE, 'utf8');
         return JSON.parse(data);
@@ -62,7 +84,6 @@ function guardarBD(db) {
     }
 }
 
-// ⏱️ Liberar reservas vencidas (más de 5 minutos)
 function verificarReservasExpiradas() {
     const db = cargarBD();
     const ahora = Date.now();
@@ -74,7 +95,6 @@ function verificarReservasExpiradas() {
         if (boleto.estado === 'RESERVADO' && (ahora - boleto.fechaReserva > tiempoLimite)) {
             delete db.boletos[numero];
             modificado = true;
-            console.log(`⏰ Boleto #${numero} expiró y volvió a estar disponible.`);
         }
     }
 
@@ -85,7 +105,7 @@ function verificarReservasExpiradas() {
 
 setInterval(verificarReservasExpiradas, 30000);
 
-// Endpoints de la API
+// Endpoints API
 app.get('/api/config', (req, res) => {
     try {
         const db = cargarBD();
@@ -104,14 +124,12 @@ app.post('/api/config', (req, res) => {
     try {
         const db = cargarBD();
         const { loteria_nombre, sorteo_horario, precio_boleto, nequi_numero } = req.body;
-
         db.config.loteria_nombre = loteria_nombre || db.config.loteria_nombre;
         db.config.sorteo_horario = sorteo_horario || db.config.sorteo_horario;
         db.config.precio_boleto = precio_boleto ? Number(precio_boleto) : db.config.precio_boleto;
         db.config.nequi_numero = nequi_numero || db.config.nequi_numero;
-
         guardarBD(db);
-        res.json({ success: true, mensaje: "Configuración actualizada con éxito." });
+        res.json({ success: true });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
@@ -131,26 +149,10 @@ app.post('/api/admin/login', (req, res) => {
     }
 });
 
-app.post('/api/admin/password', (req, res) => {
-    try {
-        const db = cargarBD();
-        const { nuevaPassword } = req.body;
-        if (!nuevaPassword || nuevaPassword.trim() === "") {
-            return res.status(400).json({ success: false, error: "Contraseña inválida" });
-        }
-        db.config.admin_password = nuevaPassword;
-        guardarBD(db);
-        res.json({ success: true, mensaje: "Contraseña actualizada correctamente" });
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
-});
-
 app.get('/api/admin/historial', (req, res) => {
     try {
         const db = cargarBD();
-        const historialOrdenado = [...db.historial].reverse();
-        res.json(historialOrdenado);
+        res.json([...db.historial].reverse());
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
@@ -164,7 +166,7 @@ app.post('/api/admin/liberar/:numero', (req, res) => {
             delete db.boletos[numero];
             guardarBD(db);
         }
-        res.json({ success: true, mensaje: `Boleto #${numero} liberado con éxito.` });
+        res.json({ success: true });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
@@ -187,14 +189,12 @@ app.post('/api/reservar', (req, res) => {
         const { numero, nombre, telefono, ciudad, email, loteria, horaSorteo, acepta_datos } = req.body;
 
         if (!acepta_datos) {
-            return res.status(400).json({ error: "Debe aceptar el tratamiento de datos para continuar." });
+            return res.status(400).json({ error: "Debe aceptar el tratamiento de datos." });
         }
 
         if (db.boletos[numero] && db.boletos[numero].estado !== 'DISPONIBLE') {
             return res.status(400).json({ error: "El boleto ya no está disponible." });
         }
-
-        const fechaReserva = Date.now();
 
         db.boletos[numero] = {
             estado: 'RESERVADO',
@@ -204,7 +204,7 @@ app.post('/api/reservar', (req, res) => {
             email,
             loteria,
             horaSorteo,
-            fechaReserva
+            fechaReserva: Date.now()
         };
 
         db.historial.push({
@@ -219,7 +219,7 @@ app.post('/api/reservar', (req, res) => {
         });
 
         guardarBD(db);
-        res.json({ success: true, mensaje: "Reserva exitosa. Tienes 5 minutos para reportar tu pago." });
+        res.json({ success: true });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
@@ -232,9 +232,9 @@ app.post('/api/pagar/:numero', (req, res) => {
         if (db.boletos[numero]) {
             db.boletos[numero].estado = 'PAGADO';
             guardarBD(db);
-            res.json({ success: true, mensaje: `Boleto ${numero} marcado como pagado.` });
+            res.json({ success: true });
         } else {
-            res.status(404).json({ success: false, mensaje: 'Boleto no encontrado.' });
+            res.status(404).json({ success: false });
         }
     } catch (e) {
         res.status(500).json({ error: e.message });
@@ -243,5 +243,5 @@ app.post('/api/pagar/:numero', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Servidor corriendo estable en el puerto ${PORT}`);
+    console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
 });
