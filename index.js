@@ -171,13 +171,10 @@ app.post('/api/reservar', (req, res) => {
         hour12: true 
     });
 
-    const antifraude = `MKD-${Math.random().toString(36).substring(2, 7).toUpperCase()}-${numero}`;
-
     db.boletos[numero] = {
         estado: 'RESERVADO',
         nombre, telefono, ciudad, email, loteria, fechaSorteo,
         fechaCompra,
-        antifraude,
         timestampReserva: Date.now()
     };
 
@@ -188,7 +185,7 @@ app.post('/api/reservar', (req, res) => {
     });
 
     guardarBD(db);
-    res.json({ success: true, antifraude, fechaCompra });
+    res.json({ success: true });
 });
 
 app.post('/api/pagar/:numero', (req, res) => {
