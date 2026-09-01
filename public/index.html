@@ -180,7 +180,8 @@
             <span style="color: #f59e0b;">GRAN RIFA</span> CHONTICO NOCHE
         </h1>
         <div class="caja-info">
-            <div id="fechaHoyHeader" style="font-size: 12px; color: #38bdf8; font-weight: 700; text-transform: capitalize; letter-spacing: 0.5px;">📅 Hoy: Cargando...</div>
+            <!-- Fecha de hoy exacta y actualizada automáticamente -->
+            <div id="fechaHoyHeader" style="font-size: 12px; color: #38bdf8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">📅 Hoy: Cargando...</div>
             <div style="height: 1px; background: #475569; width: 100%;"></div>
             <div id="premioHeader" style="font-size: 15px; font-weight: 800; color: #f59e0b;">🏆 Premio Mayor: Cargando...</div>
             <div style="height: 1px; background: #475569; width: 100%;"></div>
@@ -207,7 +208,7 @@
             loteria_nombre: "Chontico Noche",
             fecha_sorteo: "2026-09-05T19:00",
             precio_boleto: 10000,
-            premio_mayor: "$1.000.000 COP",
+            premio_mayor: "700.000 $ COP",
             nequi_numero: "3150000000",
             bancolombia_numero: "000-00000-00",
             pago_movil_datos: "Banco Mercantil | Tel: 0414-0000000 | C.I: V-12345678"
@@ -215,10 +216,16 @@
 
         function mostrarFechaHoyDinamica() {
             const ahora = new Date();
-            const opciones = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            let texto = ahora.toLocaleDateString('es-ES', opciones);
-            // Capitalizar la primera letra (ej: "Martes, 1 de septiembre de 2026")
-            texto = texto.charAt(0).toUpperCase() + texto.slice(1);
+            const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+            const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+            
+            const diaSemana = dias[ahora.getDay()];
+            const diaNum = ahora.getDate();
+            const mes = meses[ahora.getMonth()];
+            const anio = ahora.getFullYear();
+            
+            // Formato exacto solicitado: MARTES 1 DE SEPTIEMBRE DEL 2026
+            const texto = `${diaSemana} ${diaNum} de ${mes} del ${anio}`.toUpperCase();
             const el = document.getElementById('fechaHoyHeader');
             if (el) {
                 el.innerHTML = `📅 Hoy: <strong>${texto}</strong>`;
@@ -244,7 +251,7 @@
                 if (data && data.loteria_nombre) {
                     configGlobal = data;
                     document.getElementById('tituloLoteria').innerHTML = `<span style="color: #f59e0b;">GRAN RIFA</span> ${data.loteria_nombre}`;
-                    document.getElementById('premioHeader').innerHTML = `🏆 Premio Mayor: ${data.premio_mayor || '$1.000.000'}`;
+                    document.getElementById('premioHeader').innerHTML = `🏆 Premio Mayor: ${data.premio_mayor || '700.000 $ COP'}`;
                     document.getElementById('precioBoletoHeader').textContent = `💰 Valor Boleto: ${data.simbolo_moneda || '$'}${Number(data.precio_boleto).toLocaleString()} ${data.moneda}`;
                     document.getElementById('fechaSorteoHeader').innerHTML = `📅 Fecha del Sorteo: ${formatearFechaTexto(data.fecha_sorteo)}`;
                 }
@@ -455,7 +462,7 @@
                 document.getElementById('adminMoneda').value = 'COP';
                 document.getElementById('adminSimbolo').value = '$';
                 document.getElementById('adminPrecio').value = '10000';
-                document.getElementById('adminPremio').value = '$1.000.000 COP';
+                document.getElementById('adminPremio').value = '700.000 $ COP';
                 document.getElementById('adminLoteria').value = 'Chontico Noche';
             } else if (paisSel === 'venezuela_ves') {
                 document.getElementById('adminMoneda').value = 'VES';
