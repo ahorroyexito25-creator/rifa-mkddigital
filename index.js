@@ -11,6 +11,23 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Carpeta donde estarán los archivos de tu interfaz web
+const publicDir = path.join(__dirname, 'public');
+app.use(express.static(publicDir));
+
+// Carga automática de la página web principal si existe index.html
+app.get('/', (req, res) => {
+    const indexPath = path.join(publicDir, 'index.html');
+    if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+    } else {
+        res.status(200).json({ 
+            status: "online", 
+            mensaje: "API Rifa Activa. Coloca tu archivo index.html dentro de una carpeta llamada 'public'." 
+        });
+    }
+});
+
 const DATA_DIR = '/data';
 const DB_FILE = path.join(DATA_DIR, 'rifa.json');
 
@@ -51,11 +68,6 @@ function guardarBD(db) {
         console.error('Error al guardar BD:', error);
     }
 }
-
-// Ruta raíz directa para Railway
-app.get('/', (req, res) => {
-    res.status(200).json({ status: "online", mensaje: "API Rifa Activa" });
-});
 
 app.get('/api/config', (req, res) => {
     const db = cargarBD();
@@ -143,7 +155,7 @@ app.post('/api/pagar/:numero', (req, res) => {
     }
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Servidor corriendo en puerto ${PORT}`);
 });
