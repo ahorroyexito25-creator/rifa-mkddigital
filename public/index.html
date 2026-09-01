@@ -145,6 +145,7 @@
         .modal-content input[type="email"],
         .modal-content input[type="number"],
         .modal-content input[type="password"],
+        .modal-content input[type="datetime-local"],
         .modal-content select {
             width: 100%; padding: 8px 10px; margin: 6px 0; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;
         }
@@ -181,9 +182,7 @@
         <div class="caja-info">
             <div id="premioHeader" style="font-size: 15px; font-weight: 800; color: #f59e0b;">🏆 Premio Mayor: Cargando...</div>
             <div style="height: 1px; background: #475569; width: 100%;"></div>
-            <div id="fechaActual" style="font-size: 13px; color: #e2e8f0; font-weight: 600;">📅 Fecha: Calculando...</div>
-            <div style="height: 1px; background: #475569; width: 100%;"></div>
-            <div id="horarioSorteo" style="font-size: 13px; font-weight: 700; color: #38bdf8;">🕒 Sorteo: Cargando...</div>
+            <div id="fechaSorteoHeader" style="font-size: 13px; color: #e2e8f0; font-weight: 600;">📅 Sorteo: Cargando...</div>
             <div style="height: 1px; background: #475569; width: 100%;"></div>
             <div id="precioBoletoHeader" style="font-size: 14px; font-weight: 800; color: #34d399;">💰 Valor Boleto: Cargando...</div>
         </div>
@@ -204,13 +203,25 @@
             moneda: "COP",
             simbolo_moneda: "$",
             loteria_nombre: "Chontico Noche",
-            sorteo_horario: "7:00 p.m. (Col) / 8:00 p.m. (Ven)",
+            fecha_sorteo: "2026-09-05T19:00",
             precio_boleto: 10000,
             premio_mayor: "$1.000.000 COP",
             nequi_numero: "3150000000",
             bancolombia_numero: "000-00000-00",
             pago_movil_datos: "Banco Mercantil | Tel: 0414-0000000 | C.I: V-12345678"
         };
+
+        function formatearFechaTexto(fechaIso) {
+            if (!fechaIso) return "Por definir";
+            try {
+                const fecha = new Date(fechaIso);
+                if (isNaN(fecha.getTime())) return fechaIso;
+                const opciones = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+                return fecha.toLocaleDateString('es-ES', opciones);
+            } catch (e) {
+                return fechaIso;
+            }
+        }
 
         async function cargarConfiguracion() {
             try {
@@ -221,21 +232,12 @@
                     document.getElementById('tituloLoteria').innerHTML = `<span style="color: #f59e0b;">GRAN RIFA</span> ${data.loteria_nombre}`;
                     document.getElementById('premioHeader').innerHTML = `🏆 Premio Mayor: ${data.premio_mayor || '$1.000.000'}`;
                     document.getElementById('precioBoletoHeader').textContent = `💰 Valor Boleto: ${data.simbolo_moneda || '$'}${Number(data.precio_boleto).toLocaleString()} ${data.moneda}`;
-                    document.getElementById('horarioSorteo').innerHTML = `🕒 Sorteo: <b>Colombia</b> (7:00 p.m.) | <b>Venezuela</b> (8:00 p.m.)`;
+                    document.getElementById('fechaSorteoHeader').innerHTML = `📅 Fecha del Sorteo: ${formatearFechaTexto(data.fecha_sorteo)}`;
                 }
             } catch (e) {
                 console.error("Error al cargar configuración dinámica:", e);
             }
         }
-
-        function actualizarFecha() {
-            const ahora = new Date();
-            const opcionesFecha = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            document.getElementById('fechaActual').textContent = "📅 Fecha del Sorteo: " + ahora.toLocaleDateString('es-ES', opcionesFecha);
-        }
-        
-        actualizarFecha();
-        setInterval(actualizarFecha, 60000);
 
         async function renderizarBoletos() {
             try {
@@ -332,7 +334,7 @@
                     ciudad: document.getElementById('ciudad').value,
                     email: document.getElementById('email').value,
                     loteria: configGlobal.loteria_nombre,
-                    horaSorteo: configGlobal.sorteo_horario,
+                    fechaSorteo: formatearFechaTexto(configGlobal.fecha_sorteo),
                     acepta_datos: document.getElementById('acepta-datos').checked
                 };
 
@@ -389,6 +391,9 @@
                             <label style="font-size:11px; font-weight:bold;">Premio Mayor (Texto e importe):</label>
                             <input type="text" id="adminPremio" value="${configGlobal.premio_mayor}" />
 
+                            <label style="font-size:11px; font-weight:bold;">Fecha y Hora del Sorteo (Calendario):</label>
+                            <input type="datetime-local" id="adminFechaSorteo" value="${configGlobal.fecha_sorteo || ''}" />
+
                             <label style="font-size:11px; font-weight:bold;">Precio del Boleto:</label>
                             <input type="number" id="adminPrecio" value="${configGlobal.precio_boleto}" />
 
@@ -437,16 +442,19 @@
                 document.getElementById('adminSimbolo').value = '$';
                 document.getElementById('adminPrecio').value = '10000';
                 document.getElementById('adminPremio').value = '$1.000.000 COP';
+                document.getElementById('adminLoteria').value = 'Chontico Noche';
             } else if (paisSel === 'venezuela_ves') {
                 document.getElementById('adminMoneda').value = 'VES';
                 document.getElementById('adminSimbolo').value = 'Bs. ';
                 document.getElementById('adminPrecio').value = '50';
                 document.getElementById('adminPremio').value = '5.000 Bs.';
+                document.getElementById('adminLoteria').value = 'Triple Táchira';
             } else if (paisSel === 'venezuela_usd') {
                 document.getElementById('adminMoneda').value = 'USD';
                 document.getElementById('adminSimbolo').value = '$';
                 document.getElementById('adminPrecio').value = '3';
                 document.getElementById('adminPremio').value = '$300 USD';
+                document.getElementById('adminLoteria').value = 'Lotería de Animalitos';
             }
         }
 
@@ -488,7 +496,7 @@
                 pais: document.getElementById('adminPais').value,
                 loteria_nombre: document.getElementById('adminLoteria').value,
                 premio_mayor: document.getElementById('adminPremio').value,
-                sorteo_horario: '7:00 p.m. (Col) / 8:00 p.m. (Ven)',
+                fecha_sorteo: document.getElementById('adminFechaSorteo').value,
                 precio_boleto: document.getElementById('adminPrecio').value,
                 simbolo_moneda: document.getElementById('adminSimbolo').value,
                 moneda: document.getElementById('adminMoneda').value,
@@ -576,9 +584,12 @@
                     
                     const nombreCliente = boletoInfo.nombre || 'Cliente';
                     const telefonoCliente = boletoInfo.telefono || '';
+                    const fechaCompra = boletoInfo.fechaCompra || new Date().toLocaleString();
+                    const fechaSorteoFormateada = formatearFechaTexto(configGlobal.fecha_sorteo);
+                    const valorTicket = `${configGlobal.simbolo_moneda || '$'}${Number(configGlobal.precio_boleto).toLocaleString()} ${configGlobal.moneda}`;
                     const codigoSeguridad = 'MKD-' + Math.random().toString(36).substring(2, 8).toUpperCase() + '-' + numero;
 
-                    const mensaje = `============================\n COMPROBANTE OFICIAL DE RIFA   \n============================\n\n¡Hola ${nombreCliente}! Tu pago del boleto *${numero}* para la *${configGlobal.loteria_nombre}* ha sido confirmado.\n\n[+] Detalles:\n - Lotería: ${configGlobal.loteria_nombre}\n - Premio Mayor: ${configGlobal.premio_mayor}\n - Código Antifraude: ${codigoSeguridad}\n\n¡Muchísima suerte!`;
+                    const mensaje = `============================\n COMPROBANTE OFICIAL DE RIFA   \n============================\n\n¡Hola ${nombreCliente}! Tu pago del boleto *#${numero}* ha sido confirmado.\n\n[+] Detalles de tu Ticket:\n - Fecha de compra: ${fechaCompra}\n - Lotería: ${configGlobal.loteria_nombre}\n - Fecha y hora del sorteo: ${fechaSorteoFormateada}\n - Valor del ticket: ${valorTicket}\n - Premio mayor: ${configGlobal.premio_mayor}\n - Código Antifraude: ${codigoSeguridad}\n\n¡Muchísima suerte!`;
                     
                     if (telefonoCliente) {
                         const telefonoLimpiado = telefonoCliente.replace(/\D/g, '');
