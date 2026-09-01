@@ -161,7 +161,6 @@ app.post('/api/reservar', (req, res) => {
         return res.status(400).json({ error: "El boleto ya no está disponible." });
     }
 
-    // Fecha y hora exacta de compra ajustada a la zona horaria de Colombia (America/Bogota) en formato 12 horas
     const fechaCompra = new Date().toLocaleString('es-ES', { 
         timeZone: 'America/Bogota',
         day: 'numeric', 
@@ -172,10 +171,13 @@ app.post('/api/reservar', (req, res) => {
         hour12: true 
     });
 
+    const antifraude = `MKD-${Math.random().toString(36).substring(2, 7).toUpperCase()}-${numero}`;
+
     db.boletos[numero] = {
         estado: 'RESERVADO',
         nombre, telefono, ciudad, email, loteria, fechaSorteo,
         fechaCompra,
+        antifraude,
         timestampReserva: Date.now()
     };
 
@@ -186,7 +188,7 @@ app.post('/api/reservar', (req, res) => {
     });
 
     guardarBD(db);
-    res.json({ success: true });
+    res.json({ success: true, antifraude, fechaCompra });
 });
 
 app.post('/api/pagar/:numero', (req, res) => {
