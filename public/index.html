@@ -23,7 +23,6 @@
             z-index: 10;
         }
 
-        /* Efecto de dado 3D centrado en el encabezado */
         .dado-contenedor {
             perspective: 600px;
             display: inline-block;
@@ -163,7 +162,6 @@
         .btn-guardar { background-color: #0284c7; color: white; padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; }
         .btn-cancelar { background-color: #e11d48; color: white; padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
         
-        /* Botón Flotante Conectado a WhatsApp */
         .whatsapp-flotante {
             position: fixed;
             bottom: 25px;
@@ -202,7 +200,6 @@
             text-decoration: underline;
         }
 
-        /* Estilo del Descargo de Responsabilidad */
         .descargo-legal {
             max-width: 700px;
             margin: 20px auto 10px auto;
@@ -219,7 +216,6 @@
 </head>
 <body>
 
-    <!-- Encabezado con Dado 3D Centrado -->
     <div class="header-rifa">
         <div class="dado-contenedor">
             <div class="dado-flotante">🎲</div>
@@ -239,15 +235,13 @@
         </div>
     </div>
 
-    <!-- Grilla de Boletos Interactivos -->
     <div id="grid-boletos"></div>
 
-    <!-- Botón de Conexión Inmediata a WhatsApp -->
-    <a href="https://wa.me/?text=Hola,%20deseo%20más%20información%20sobre%20la%20rifa%20y%20la%20disponibilidad%20de%20boletos." target="_blank" class="whatsapp-flotante" title="Atención y Soporte por WhatsApp">
+    <!-- Botón de WhatsApp con ID incorporado -->
+    <a href="#" id="btnWhatsappFlotante" target="_blank" class="whatsapp-flotante" title="Atención y Soporte por WhatsApp">
         💬
     </a>
 
-    <!-- Pie de Página con Descargo de Responsabilidad Legal -->
     <footer>
         <div class="descargo-legal">
             <strong>Descargo de responsabilidad:</strong> Este sitio web opera exclusivamente como un entorno de prueba, demostración técnica y validación de software para fines didácticos y de desarrollo. No representa una plataforma oficial de juegos de azar comerciales ni realiza transacciones de lotería con validez legal comercial directa.
@@ -269,7 +263,8 @@
             premio_mayor: "700.000 $ COP",
             nequi_numero: "3150000000",
             bancolombia_numero: "000-00000-00",
-            pago_movil_datos: "Banco Mercantil | Tel: 0414-0000000 | C.I: V-12345678"
+            pago_movil_datos: "Banco Mercantil | Tel: 0414-0000000 | C.I: V-12345678",
+            whatsapp_numero: "573150000000"
         };
 
         function mostrarFechaHoyDinamica() {
@@ -311,6 +306,13 @@
                     document.getElementById('premioHeader').innerHTML = `🏆 Premio Mayor: ${data.premio_mayor || '700.000 $ COP'}`;
                     document.getElementById('precioBoletoHeader').textContent = `💰 Valor Boleto: ${data.simbolo_moneda || '$'}${Number(data.precio_boleto).toLocaleString()} ${data.moneda}`;
                     document.getElementById('fechaSorteoHeader').innerHTML = `📅 Fecha del Sorteo: ${formatearFechaTexto(data.fecha_sorteo)}`;
+                    
+                    // Actualizar enlace flotante de WhatsApp de forma dinámica
+                    const btnWa = document.getElementById('btnWhatsappFlotante');
+                    if (btnWa && data.whatsapp_numero) {
+                        const mensajeWa = encodeURIComponent("Hola, deseo más información sobre la rifa y la disponibilidad de boletos.");
+                        btnWa.href = `https://wa.me/${data.whatsapp_numero.replace(/\D/g, '')}?text=${mensajeWa}`;
+                    }
                 }
             } catch (e) {
                 console.error("Error al cargar configuración dinámica:", e);
@@ -481,7 +483,7 @@
                             <label style="font-size:11px; font-weight:bold;">Código Moneda (COP / VES / USD):</label>
                             <input type="text" id="adminMoneda" value="${configGlobal.moneda}" />
 
-                            <h4 style="color: #333; margin: 10px 0 5px 0;">💳 Datos de Pago</h4>
+                            <h4 style="color: #333; margin: 10px 0 5px 0;">💳 Datos de Pago y Contacto</h4>
                             <label style="font-size:11px; font-weight:bold;">Número Nequi (Colombia):</label>
                             <input type="text" id="adminNequi" value="${configGlobal.nequi_numero}" />
 
@@ -490,6 +492,9 @@
 
                             <label style="font-size:11px; font-weight:bold;">Datos Pago Móvil (Venezuela):</label>
                             <input type="text" id="adminPagoMovil" value="${configGlobal.pago_movil_datos}" />
+
+                            <label style="font-size:11px; font-weight:bold;">WhatsApp de Soporte/Botón (Ej: 573150000000):</label>
+                            <input type="text" id="adminWhatsapp" value="${configGlobal.whatsapp_numero || ''}" />
 
                             <button type="button" class="btn-guardar" onclick="guardarConfiguracionAdmin()" style="margin-top: 10px;">Guardar Cambios</button>
 
@@ -580,7 +585,8 @@
                 moneda: document.getElementById('adminMoneda').value,
                 nequi_numero: document.getElementById('adminNequi').value,
                 bancolombia_numero: document.getElementById('adminBancolombia').value,
-                pago_movil_datos: document.getElementById('adminPagoMovil').value
+                pago_movil_datos: document.getElementById('adminPagoMovil').value,
+                whatsapp_numero: document.getElementById('adminWhatsapp').value
             };
 
             try {
@@ -688,33 +694,6 @@
             mostrarFechaHoyDinamica();
             await cargarConfiguracion();
             await renderizarBoletos();
-        };
-const clienteTel = boletoInfo.telefono || '';
-                    const codigoAntifraude = data.codigoAntifraude || boletoInfo.codigoAntifraude || 'N/A';
-
-                    const resWp = await fetch(`/api/whatsapp/generar/${numero}`);
-                    const dataWp = await resWp.json();
-                    
-                    if (dataWp.success && dataWp.url) {
-                        if (confirm(`El pago del boleto #${numero} se aprobó correctamente.\n\n¿Desea abrir WhatsApp para enviar el comprobante digital y el código antifraude (${codigoAntifraude}) al cliente?`)) {
-                            window.open(dataWp.url, '_blank');
-                        }
-                    }
-
-                    cargarReservadosAdmin();
-                    renderizarBoletos();
-                } else {
-                    alert("Error al aprobar el pago.");
-                }
-            } catch (e) {
-                alert("Error de conexión al aprobar.");
-            }
-        }
-
-        window.onload = () => {
-            mostrarFechaHoyDinamica();
-            cargarConfiguracion();
-            renderizarBoletos();
         };
     </script>
 </body>
