@@ -759,7 +759,29 @@
                 contenedor.innerHTML = '<p style="color: red;">Error al cargar datos.</p>';
             }
         }
-
+        
+        async function reiniciarSorteoTablero() {
+    if (!confirm("¿Estás seguro de iniciar un nuevo sorteo? Esto pondrá todos los boletos nuevamente en verde (disponibles) para la venta.")) {
+        return;
+    }
+    try {
+        const respuesta = await fetch('/api/admin/resetar-sorteo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const resultado = await respuesta.json();
+        if (resultado.success) {
+            alert("¡Sorteo reiniciado con éxito! Todos los boletos están disponibles.");
+            location.reload();
+        } else {
+            alert("Error al reiniciar el sorteo.");
+        }
+    } catch (e) {
+        console.error(e);
+        alert("Error de conexión al reiniciar.");
+    }
+}
+        
         async function aprobarPagoAdmin(numero) {
             try {
                 const res = await fetch(`/api/pagar/${numero}`, { method: 'POST' });
