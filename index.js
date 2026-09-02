@@ -29,6 +29,24 @@ app.get('/', (req, res) => {
 const DATA_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH || path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'rifa.json');
 
+function limpiarBoletosExpirados(db) {
+    const ahora = Date.now();
+    const tiempoExpiracion = 5 * 60 * 1000; 
+    let modificado = false;
+    
+    for (const [numero, boleto] of Object.entries(db.boletos)) {
+        if (boleto && boleto.estado === 'RESERVADO' && boleto.timestampReserva) {
+            if (ahora - boleto.timestampReserva > tiempoExpiracion) {
+                delete db.boletos[numero];
+                modificado = true;
+            }
+        }
+    }
+    if (modificado) {
+        guardarBD(db);
+    }
+}
+
 function cargarBD() {
     try {
         if (!fs.existsSync(DATA_DIR)) {
@@ -48,7 +66,7 @@ function cargarBD() {
                     nequi_numero: '3150000000',
                     bancolombia_numero: '000-00000-00',
                     pago_movil_datos: 'Banco: Mercantil | Tel: 0414-0000000 | C.I: V-12345678',
-                    whatsapp_numero: '573150000000', // <-- Configurado por defecto
+                    whatsapp_numero: '573150000000',
                     admin_password: '1234'
                 },
                 boletos: {},
@@ -56,10 +74,12 @@ function cargarBD() {
             };
             fs.writeFileSync(DB_FILE, JSON.stringify(initialData, null, 2), 'utf8');
         }
-        return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+        const db = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+        limpiarBoletosExpirados(db);
+        return db;
     } catch (error) {
         console.error('Error al cargar BD:', error);
-        return {
+        const fallbackDb = {
             config: { 
                 id: 1, 
                 pais: 'colombia',
@@ -78,6 +98,8 @@ function cargarBD() {
             boletos: {},
             historial: []
         };
+        limpiarBoletosExpirados(fallbackDb);
+        return fallbackDb;
     }
 }
 
