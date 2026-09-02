@@ -3,169 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rifa MKDdigital 🎟️ - Gana Increíbles Premios</title>
+    <title>Rifa MKDdigital 🎟️</title>
     <style>
-        :root {
-            --primary: #0f172a;
-            --secondary: #1e293b;
-            --accent: #f59e0b;
-            --success: #059669;
-            --warning: #d97706;
-            --danger: #dc2626;
-            --bg-light: #f1f5f9;
-        }
-
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #cbd5e1;
             margin: 0;
             padding: 0;
-            color: var(--primary);
+            color: #0f172a;
         }
 
-        /* Landing Page Hero Section */
-        .landing-hero {
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            color: #ffffff;
+        .header-rifa {
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            padding: 35px 20px;
             text-align: center;
-            padding: 40px 20px 30px 20px;
-            border-bottom: 5px solid var(--accent);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.5);
+            border-bottom: 4px solid #f59e0b;
+            box-shadow: 0 15px 40px -10px rgba(0,0,0,0.7);
+            position: relative;
+            z-index: 10;
         }
 
-        .badge-landing {
+        /* Efecto de dado 3D centrado en el encabezado */
+        .dado-contenedor {
+            perspective: 600px;
             display: inline-block;
-            background: rgba(245, 158, 11, 0.2);
-            color: var(--accent);
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 10px;
-            border: 1px solid rgba(245, 158, 11, 0.4);
+            margin-bottom: 5px;
         }
 
-        @keyframes float {
-            0% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-8px) rotate(5deg); }
-            100% { transform: translateY(0px) rotate(0deg); }
+        @keyframes float3d {
+            0% { transform: translateY(0px) rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+            50% { transform: translateY(-10px) rotateX(15deg) rotateY(25deg) rotateZ(5deg); }
+            100% { transform: translateY(0px) rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
         }
 
         .dado-flotante {
             display: inline-block;
-            font-size: 42px;
-            animation: float 3s ease-in-out infinite;
+            font-size: 45px;
+            animation: float3d 4s ease-in-out infinite;
+            transform-style: preserve-3d;
+            filter: drop-shadow(0 10px 15px rgba(245, 158, 11, 0.4));
+        }
+
+        .marca-rifa {
+            font-size: 13px;
+            letter-spacing: 3px;
+            color: #38bdf8;
+            text-transform: uppercase;
+            font-weight: 800;
             margin-bottom: 5px;
         }
 
         .titulo-rifa {
-            margin: 0 0 10px 0;
+            margin: 0 0 15px 0;
             font-family: 'Impact', Charcoal, sans-serif;
-            font-size: 40px;
+            font-size: 38px;
+            font-weight: 400;
             color: #f1f5f9;
             text-transform: uppercase;
             letter-spacing: 2px;
-            text-shadow: 0 4px 10px rgba(0,0,0,0.6);
-        }
-
-        .subtitulo-landing {
-            font-size: 15px;
-            color: #94a3b8;
-            max-width: 600px;
-            margin: 0 auto 20px auto;
-            line-height: 1.5;
+            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 5px 0 rgba(0,0,0,0.5), 0 10px 10px rgba(0,0,0,0.8);
         }
 
         .caja-info {
             display: inline-flex;
             flex-direction: column;
-            gap: 10px;
-            background: rgba(15, 23, 42, 0.9);
-            padding: 20px 30px;
-            border-radius: 16px;
-            border: 2px solid #334155;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
-            max-width: 520px;
+            gap: 8px;
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
+            padding: 15px 25px;
+            border-radius: 20px;
+            border: 2px solid #475569;
+            box-shadow: inset 0 2px 5px rgba(255,255,255,0.1), 0 5px 15px rgba(0,0,0,0.5);
+            max-width: 500px;
             width: 100%;
             box-sizing: border-box;
-            text-align: left;
-        }
-
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 14px;
-        }
-
-        .info-row strong {
-            color: var(--accent);
-        }
-
-        /* Grid de Boletos */
-        .seccion-boletos {
-            max-width: 950px;
-            margin: 30px auto;
-            padding: 0 15px;
-            text-align: center;
-        }
-
-        .seccion-boletos h3 {
-            color: var(--primary);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 20px;
         }
 
         #grid-boletos {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(85px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
             gap: 12px;
-            justify-content: center;
+            padding: 25px;
+            max-width: 950px;
+            margin: 0 auto;
         }
 
         .ticket {
             text-align: center;
-            border-radius: 10px;
+            border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
             font-size: 18px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             aspect-ratio: 1 / 1;
-            padding: 6px;
+            padding: 8px;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
         
         .disponible { 
-            background-color: var(--success); 
+            background-color: #059669; 
             color: #ffffff; 
-            border: 1px solid #047857;
+            border: 1px solid #000000;
         }
         .disponible:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 15px rgba(0,0,0,0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.6);
             background-color: #047857;
         }
 
         .reservado { 
-            background-color: var(--warning); 
+            background-color: #d97706; 
             color: white; 
             pointer-events: none; 
-            border: 1px solid #b45309;
+            border: 1px solid #000000;
             opacity: 0.9;
         }
 
         .pagado { 
-            background-color: var(--danger); 
+            background-color: #dc2626; 
             color: white; 
             pointer-events: none; 
-            border: 1px solid #b91c1c;
+            border: 1px solid #000000;
             opacity: 0.9;
         }
 
@@ -174,18 +135,16 @@
             margin-top: 3px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            opacity: 0.95;
+            opacity: 0.9;
         }
         
-        /* Modales */
         .modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.75); display: flex; justify-content: center; align-items: center; z-index: 1000;
-            backdrop-filter: blur(4px);
+            background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 1000;
         }
         .modal-content {
-            background: #ffffff; color: var(--primary); padding: 25px; border-radius: 14px; width: 90%; max-width: 420px; text-align: left;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            background: #ffffff; color: #1e293b; padding: 25px; border-radius: 12px; width: 90%; max-width: 420px; text-align: left;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
             max-height: 90vh;
             overflow-y: auto;
         }
@@ -196,64 +155,105 @@
         .modal-content input[type="password"],
         .modal-content input[type="datetime-local"],
         .modal-content select {
-            width: 100%; padding: 10px; margin: 6px 0 12px 0; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 14px;
+            width: 100%; padding: 8px 10px; margin: 6px 0; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;
         }
         .modal-buttons {
             display: flex; gap: 10px; justify-content: center; margin-top: 15px;
         }
-        .btn-guardar { background-color: #0284c7; color: white; padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; transition: background 0.2s; }
-        .btn-guardar:hover { background-color: #0369a1; }
-        .btn-cancelar { background-color: #e11d48; color: white; padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: background 0.2s; }
-        .btn-cancelar:hover { background-color: #be123c; }
+        .btn-guardar { background-color: #0284c7; color: white; padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; }
+        .btn-cancelar { background-color: #e11d48; color: white; padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        
+        /* Botón Flotante Conectado a WhatsApp */
+        .whatsapp-flotante {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            background-color: #25d366;
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+            z-index: 999;
+            text-decoration: none;
+            transition: transform 0.3s ease, background-color 0.3s ease;
+        }
+        .whatsapp-flotante:hover {
+            transform: scale(1.1);
+            background-color: #20ba5a;
+        }
 
-        /* Footer */
         footer {
             text-align: center;
             padding: 30px 15px;
-            color: #334155;
+            color: #475569;
             font-size: 13px;
-            background: #cbd5e1;
-            border-top: 1px solid #94a3b8;
-            margin-top: 40px;
         }
         footer a {
-            color: #0f172a;
+            color: #334155;
             text-decoration: none;
-            font-weight: 700;
+            font-weight: 600;
         }
         footer a:hover {
             text-decoration: underline;
+        }
+
+        /* Estilo del Descargo de Responsabilidad */
+        .descargo-legal {
+            max-width: 700px;
+            margin: 20px auto 10px auto;
+            padding: 12px 18px;
+            background: rgba(30, 41, 59, 0.05);
+            border: 1px dashed #94a3b8;
+            border-radius: 8px;
+            font-size: 11px;
+            color: #475569;
+            text-align: justify;
+            line-height: 1.4;
         }
     </style>
 </head>
 <body>
 
-    <!-- Landing Page Hero Section -->
-    <header class="landing-hero">
-        <div class="badge-landing">✨ Sorteo Oficial Autorizado</div>
-        <div class="dado-flotante">🎲</div>
-        <h1 class="titulo-rifa" id="tituloLoteria">
-            <span style="color: var(--accent);">GRAN RIFA</span> CHONTICO NOCHE
-        </h1>
-        <p class="subtitulo-landing">Selecciona tu número de la suerte, completa tus datos de contacto y participa de forma rápida y segura por el gran premio mayor.</p>
-        
-        <div class="caja-info">
-            <div class="info-row" id="fechaHoyHeader"><span>📅 Hoy:</span> <strong>Cargando...</strong></div>
-            <div class="info-row" id="premioHeader"><span>🏆 Premio Mayor:</span> <strong>Cargando...</strong></div>
-            <div class="info-row" id="fechaSorteoHeader"><span>⏳ Sorteo:</span> <strong>Cargando...</strong></div>
-            <div class="info-row" id="precioBoletoHeader"><span>💰 Valor Boleto:</span> <strong>Cargando...</strong></div>
+    <!-- Encabezado con Dado 3D Centrado -->
+    <div class="header-rifa">
+        <div class="dado-contenedor">
+            <div class="dado-flotante">🎲</div>
         </div>
-    </header>
+        <div class="marca-rifa">Rifa MKDdigital</div>
+        <h1 class="titulo-rifa" id="tituloLoteria">
+            <span style="color: #f59e0b;">GRAN RIFA</span> CHONTICO NOCHE
+        </h1>
+        <div class="caja-info">
+            <div id="fechaHoyHeader" style="font-size: 12px; color: #38bdf8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">📅 Hoy: Cargando...</div>
+            <div style="height: 1px; background: #475569; width: 100%;"></div>
+            <div id="premioHeader" style="font-size: 15px; font-weight: 800; color: #f59e0b;">🏆 Premio Mayor: Cargando...</div>
+            <div style="height: 1px; background: #475569; width: 100%;"></div>
+            <div id="fechaSorteoHeader" style="font-size: 13px; color: #e2e8f0; font-weight: 600;">📅 Sorteo: Cargando...</div>
+            <div style="height: 1px; background: #475569; width: 100%;"></div>
+            <div id="precioBoletoHeader" style="font-size: 14px; font-weight: 800; color: #34d399;">💰 Valor Boleto: Cargando...</div>
+        </div>
+    </div>
 
-    <!-- Grilla Interactiva de Boletos -->
-    <main class="seccion-boletos">
-        <h3>Selecciona tu número ganador (00 al 99)</h3>
-        <div id="grid-boletos"></div>
-    </main>
+    <!-- Grilla de Boletos Interactivos -->
+    <div id="grid-boletos"></div>
 
+    <!-- Botón de Conexión Inmediata a WhatsApp -->
+    <a href="https://wa.me/?text=Hola,%20deseo%20más%20información%20sobre%20la%20rifa%20y%20la%20disponibilidad%20de%20boletos." target="_blank" class="whatsapp-flotante" title="Atención y Soporte por WhatsApp">
+        💬
+    </a>
+
+    <!-- Pie de Página con Descargo de Responsabilidad Legal -->
     <footer>
+        <div class="descargo-legal">
+            <strong>Descargo de responsabilidad:</strong> Este sitio web opera exclusivamente como un entorno de prueba, demostración técnica y validación de software para fines didácticos y de desarrollo. No representa una plataforma oficial de juegos de azar comerciales ni realiza transacciones de lotería con validez legal comercial directa.
+        </div>
         <p>Rifa MKDDigital © 2026 - Todos los derechos reservados</p>
-        <p style="margin-top: 8px;">
+        <p style="margin-top: 5px;">
             <a href="#" onclick="abrirAdmin(); return false;">⚙️ Panel Administrativo</a>
         </p>
     </footer>
@@ -285,7 +285,7 @@
             const texto = `${diaSemana} ${diaNum} de ${mes} del ${anio}`.toUpperCase();
             const el = document.getElementById('fechaHoyHeader');
             if (el) {
-                el.innerHTML = `<span>📅 Hoy:</span> <strong>${texto}</strong>`;
+                el.innerHTML = `📅 Hoy: <strong>${texto}</strong>`;
             }
         }
 
@@ -307,10 +307,10 @@
                 const data = await res.json();
                 if (data && data.loteria_nombre) {
                     configGlobal = data;
-                    document.getElementById('tituloLoteria').innerHTML = `<span style="color: var(--accent);">GRAN RIFA</span> ${data.loteria_nombre}`;
-                    document.getElementById('premioHeader').innerHTML = `<span>🏆 Premio Mayor:</span> <strong>${data.premio_mayor || '700.000 $ COP'}</strong>`;
-                    document.getElementById('precioBoletoHeader').innerHTML = `<span>💰 Valor Boleto:</span> <strong>${data.simbolo_moneda || '$'}${Number(data.precio_boleto).toLocaleString()} ${data.moneda}</strong>`;
-                    document.getElementById('fechaSorteoHeader').innerHTML = `<span>⏳ Fecha Sorteo:</span> <strong>${formatearFechaTexto(data.fecha_sorteo)}</strong>`;
+                    document.getElementById('tituloLoteria').innerHTML = `<span style="color: #f59e0b;">GRAN RIFA</span> ${data.loteria_nombre}`;
+                    document.getElementById('premioHeader').innerHTML = `🏆 Premio Mayor: ${data.premio_mayor || '700.000 $ COP'}`;
+                    document.getElementById('precioBoletoHeader').textContent = `💰 Valor Boleto: ${data.simbolo_moneda || '$'}${Number(data.precio_boleto).toLocaleString()} ${data.moneda}`;
+                    document.getElementById('fechaSorteoHeader').innerHTML = `📅 Fecha del Sorteo: ${formatearFechaTexto(data.fecha_sorteo)}`;
                 }
             } catch (e) {
                 console.error("Error al cargar configuración dinámica:", e);
@@ -364,7 +364,7 @@
 
             let infoPagoTexto = '';
             if (configGlobal.pais === 'colombia' || configGlobal.moneda === 'COP') {
-                infoPagoTexto = `Paga vía <b>Nequi</b> (${configGlobal.nequi_numero}) o <b>Bancolombia</b> (${configGlobal.bancolombia_numero}).`;
+                infoPagoTexto = `Paga vía <b>Nequi</b> (${configGlobal.nequi_numero}) o <b>Bancolombia</b> (${configGlobal.bancolombia_numero}) con código QR o transferencia.`;
             } else {
                 infoPagoTexto = `Paga vía <b>Pago Móvil / Divisas</b>:<br><small>${configGlobal.pago_movil_datos}</small>`;
             }
@@ -372,16 +372,16 @@
             const modalHtml = `
                 <div id="modal-comprador" class="modal">
                     <div class="modal-content">
-                        <h2 style="text-align: center; margin-top:0; color: var(--primary);">${configGlobal.loteria_nombre} 🎟️</h2>
+                        <h2 style="text-align: center; margin-top:0;">${configGlobal.loteria_nombre} 🎟️</h2>
                         <h3 style="text-align: center; color: #0284c7; margin: 5px 0;">Reservar Boleto: #${numeroBoleto}</h3>
-                        <p style="font-size: 13px; color: #334155; text-align: center; background: #f1f5f9; padding: 10px; border-radius: 8px;">
+                        <p style="font-size: 13px; color: #334155; text-align: center; background: #f1f5f9; padding: 10px; border-radius: 6px;">
                             Valor: <b>${configGlobal.simbolo_moneda || '$'}${Number(configGlobal.precio_boleto).toLocaleString()} ${configGlobal.moneda}</b><br>
                             ${infoPagoTexto}<br>
-                            <span style="color: var(--danger); font-weight: bold;">Tienes 5 minutos para reportar tu pago.</span>
+                            <span style="color: #e11d48; font-weight: bold;">Tienes 5 minutos para reportar tu pago.</span>
                         </p>
                         <form id="form-reserva">
                             <input type="text" id="nombre" placeholder="Nombre completo" required />
-                            <input type="tel" id="telefono" placeholder="Teléfono / WhatsApp (ej: +57...)" required />
+                            <input type="tel" id="telefono" placeholder="Teléfono / WhatsApp (ej: +57... o +58...)" required />
                             <input type="text" id="ciudad" placeholder="Ciudad / Estado" required />
                             <input type="email" id="email" placeholder="Correo electrónico" required />
                             
@@ -440,7 +440,7 @@
             const modalAdminHtml = `
                 <div id="modalAdmin" class="modal">
                     <div class="modal-content">
-                        <h3 style="text-align:center; color:var(--primary); margin-top:0;">Panel de Administración ⚙️</h3>
+                        <h3 style="text-align:center; color:#1e293b; margin-top:0;">Panel de Administración ⚙️</h3>
                         
                         <div id="divLogin">
                             <p style="font-size:13px;">Ingrese contraseña de acceso:</p>
