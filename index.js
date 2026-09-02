@@ -78,10 +78,14 @@ function cargarBD() {
         }
         const db = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
         
-        // Asegurar campos nuevos si no existen
+        // Asegurar campos y evitar valores undefined en configuraciones existentes
+        if (!db.config) db.config = {};
         if (!db.config.whatsapp_numero) db.config.whatsapp_numero = '573150000000';
+        if (db.config.nequi_numero === undefined) db.config.nequi_numero = '';
         if (db.config.nequi_qr === undefined) db.config.nequi_qr = '';
+        if (db.config.bancolombia_numero === undefined) db.config.bancolombia_numero = '';
         if (db.config.bancolombia_qr === undefined) db.config.bancolombia_qr = '';
+        if (db.config.pago_movil_datos === undefined) db.config.pago_movil_datos = '';
 
         if (limpiarReservasExpiradas(db)) {
             guardarBD(db);
@@ -142,12 +146,12 @@ app.post('/api/config', (req, res) => {
     db.config.fecha_sorteo = fecha_sorteo || db.config.fecha_sorteo;
     db.config.precio_boleto = precio_boleto ? Number(precio_boleto) : db.config.precio_boleto;
     db.config.premio_mayor = premio_mayor || db.config.premio_mayor;
-    db.config.nequi_numero = nequi_numero !== undefined ? nequi_numero : db.config.nequi_numero;
-    db.config.nequi_qr = nequi_qr !== undefined ? nequi_qr : db.config.nequi_qr;
-    db.config.bancolombia_numero = bancolombia_numero !== undefined ? bancolombia_numero : db.config.bancolombia_numero;
-    db.config.bancolombia_qr = bancolombia_qr !== undefined ? bancolombia_qr : db.config.bancolombia_qr;
-    db.config.pago_movil_datos = pago_movil_datos !== undefined ? pago_movil_datos : db.config.pago_movil_datos;
-    db.config.whatsapp_numero = whatsapp_numero !== undefined ? whatsapp_numero : db.config.whatsapp_numero;
+    db.config.nequi_numero = nequi_numero !== undefined ? nequi_numero : (db.config.nequi_numero || '');
+    db.config.nequi_qr = nequi_qr !== undefined ? nequi_qr : (db.config.nequi_qr || '');
+    db.config.bancolombia_numero = bancolombia_numero !== undefined ? bancolombia_numero : (db.config.bancolombia_numero || '');
+    db.config.bancolombia_qr = bancolombia_qr !== undefined ? bancolombia_qr : (db.config.bancolombia_qr || '');
+    db.config.pago_movil_datos = pago_movil_datos !== undefined ? pago_movil_datos : (db.config.pago_movil_datos || '');
+    db.config.whatsapp_numero = whatsapp_numero !== undefined ? whatsapp_numero : (db.config.whatsapp_numero || '');
     
     guardarBD(db);
     res.json({ success: true });
@@ -195,9 +199,9 @@ app.post('/api/reservar', (req, res) => {
     const db = cargarBD();
     limpiarReservasExpiradas(db);
     
-    const { numero, nombre, telefono, ciudad, email, loteria, fechaSorteo, acepta_datos } = req.body;
+    const { numero, nombre, telefono, ciudad, email, loteria, fechaSorteo, aceptas_datos } = req.body;
 
-    if (!acepta_datos) {
+    if (!aceptas_datos) {
         return res.status(400).json({ error: "Debe aceptar el tratamiento de datos." });
     }
 
