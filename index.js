@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: '10mb' })); // Aumentado límite para aceptar imágenes QR en base64
+app.use(express.json({ limit: '10mb' }));
 
 const publicDir = path.join(__dirname, 'public');
 app.use(express.static(publicDir));
@@ -78,7 +78,6 @@ function cargarBD() {
         }
         const db = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
         
-        // Asegurar campos y evitar valores undefined en configuraciones existentes
         if (!db.config) db.config = {};
         if (!db.config.whatsapp_numero) db.config.whatsapp_numero = '573150000000';
         if (db.config.nequi_numero === undefined) db.config.nequi_numero = '';
@@ -155,6 +154,14 @@ app.post('/api/config', (req, res) => {
     
     guardarBD(db);
     res.json({ success: true });
+});
+
+// NUEVA RUTA: Reiniciar el tablero de boletos para un nuevo sorteo (deja todos en verde)
+app.post('/api/admin/resetar-sorteo', (req, res) => {
+    const db = cargarBD();
+    db.boletos = {}; // Limpia los boletos activos volviéndolos todos disponibles
+    guardarBD(db);
+    res.json({ success: true, mensaje: "Tablero reiniciado correctamente." });
 });
 
 app.post('/api/admin/login', (req, res) => {
