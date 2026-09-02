@@ -48,6 +48,7 @@ function cargarBD() {
                     nequi_numero: '3150000000',
                     bancolombia_numero: '000-00000-00',
                     pago_movil_datos: 'Banco: Mercantil | Tel: 0414-0000000 | C.I: V-12345678',
+                    whatsapp_soporte: '573150000000',
                     admin_password: '1234'
                 },
                 boletos: {},
@@ -71,6 +72,7 @@ function cargarBD() {
                 nequi_numero: '3150000000', 
                 bancolombia_numero: '000-00000-00',
                 pago_movil_datos: 'Banco: Mercantil | Tel: 0414-0000000 | C.I: V-12345678',
+                whatsapp_soporte: '573150000000',
                 admin_password: '1234' 
             },
             boletos: {},
@@ -94,7 +96,7 @@ app.get('/api/config', (req, res) => {
 
 app.post('/api/config', (req, res) => {
     const db = cargarBD();
-    const { pais, moneda, simbolo_moneda, loteria_nombre, fecha_sorteo, precio_boleto, premio_mayor, nequi_numero, bancolombia_numero, pago_movil_datos } = req.body;
+    const { pais, moneda, simbolo_moneda, loteria_nombre, fecha_sorteo, precio_boleto, premio_mayor, nequi_numero, bancolombia_numero, pago_movil_datos, whatsapp_soporte } = req.body;
     
     db.config.pais = pais || db.config.pais;
     db.config.moneda = moneda || db.config.moneda;
@@ -106,6 +108,7 @@ app.post('/api/config', (req, res) => {
     db.config.nequi_numero = nequi_numero !== undefined ? nequi_numero : db.config.nequi_numero;
     db.config.bancolombia_numero = bancolombia_numero !== undefined ? bancolombia_numero : db.config.bancolombia_numero;
     db.config.pago_movil_datos = pago_movil_datos !== undefined ? pago_movil_datos : db.config.pago_movil_datos;
+    db.config.whatsapp_soporte = whatsapp_soporte !== undefined ? whatsapp_soporte : db.config.whatsapp_soporte;
     
     guardarBD(db);
     res.json({ success: true });
@@ -154,7 +157,7 @@ app.post('/api/reservar', (req, res) => {
     const { numero, nombre, telefono, ciudad, email, loteria, fechaSorteo, acepta_datos } = req.body;
 
     if (!acepta_datos) {
-        return res.status(400).json({ error: "Debe aceptar el tratamiento de datos." });
+        return res.status(400).json({ error: "Debe aceptar el tratamiento de datos y los términos legales." });
     }
 
     if (db.boletos[numero] && db.boletos[numero].estado !== 'DISPONIBLE') {
