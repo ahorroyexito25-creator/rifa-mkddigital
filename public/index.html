@@ -3,654 +3,359 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rifa MKDdigital 🎟️</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #cbd5e1;
-            margin: 0;
-            padding: 0;
-            color: #0f172a;
-        }
-
-        .header-rifa {
-            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-            padding: 35px 20px;
-            text-align: center;
-            border-bottom: 4px solid #f59e0b;
-            box-shadow: 0 15px 40px -10px rgba(0,0,0,0.7);
-            position: relative;
-            z-index: 10;
-        }
-
-        .dado-contenedor {
-            perspective: 600px;
-            display: inline-block;
-            margin-bottom: 5px;
-        }
-
-        @keyframes float3d {
-            0% { transform: translateY(0px) rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
-            50% { transform: translateY(-10px) rotateX(15deg) rotateY(25deg) rotateZ(5deg); }
-            100% { transform: translateY(0px) rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
-        }
-
-        .dado-flotante {
-            display: inline-block;
-            font-size: 45px;
-            animation: float3d 4s ease-in-out infinite;
-            transform-style: preserve-3d;
-            filter: drop-shadow(0 10px 15px rgba(245, 158, 11, 0.4));
-        }
-
-        .marca-rifa {
-            font-size: 13px;
-            letter-spacing: 3px;
-            color: #38bdf8;
-            text-transform: uppercase;
-            font-weight: 800;
-            margin-bottom: 5px;
-        }
-
-        .titulo-rifa {
-            margin: 0 0 15px 0;
-            font-family: 'Impact', Charcoal, sans-serif;
-            font-size: 38px;
-            font-weight: 400;
-            color: #f1f5f9;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 5px 0 rgba(0,0,0,0.5), 0 10px 10px rgba(0,0,0,0.8);
-        }
-
-        .caja-info {
-            display: inline-flex;
-            flex-direction: column;
-            gap: 8px;
-            background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
-            padding: 15px 25px;
-            border-radius: 20px;
-            border: 2px solid #475569;
-            box-shadow: inset 0 2px 5px rgba(255,255,255,0.1), 0 5px 15px rgba(0,0,0,0.5);
-            max-width: 500px;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        #grid-boletos {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
-            gap: 12px;
-            padding: 25px;
-            max-width: 950px;
-            margin: 0 auto;
-        }
-
-        .ticket {
-            text-align: center;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 18px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            aspect-ratio: 1 / 1;
-            padding: 8px;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        
-        .disponible { 
-            background-color: #059669; 
-            color: #ffffff; 
-            border: 1px solid #000000;
-        }
-        .disponible:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.6);
-            background-color: #047857;
-        }
-
-        .reservado { 
-            background-color: #d97706; 
-            color: white; 
-            pointer-events: none; 
-            border: 1px solid #000000;
-            opacity: 0.9;
-        }
-
-        .pagado { 
-            background-color: #dc2626; 
-            color: white; 
-            pointer-events: none; 
-            border: 1px solid #000000;
-            opacity: 0.9;
-        }
-
-        .estado-texto {
-            font-size: 9px;
-            margin-top: 3px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            opacity: 0.9;
-        }
-        
-        .modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 1000;
-        }
-        .modal-content {
-            background: #ffffff; color: #1e293b; padding: 25px; border-radius: 12px; width: 90%; max-width: 420px; text-align: left;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-        .modal-content input[type="text"],
-        .modal-content input[type="tel"],
-        .modal-content input[type="email"],
-        .modal-content input[type="number"],
-        .modal-content input[type="password"],
-        .modal-content input[type="datetime-local"],
-        .modal-content select {
-            width: 100%; padding: 8px 10px; margin: 6px 0; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;
-        }
-        .modal-buttons {
-            display: flex; gap: 10px; justify-content: center; margin-top: 15px;
-        }
-        .btn-guardar { background-color: #0284c7; color: white; padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; }
-        .btn-cancelar { background-color: #e11d48; color: white; padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        
-        .whatsapp-flotante {
-            position: fixed;
-            bottom: 25px;
-            right: 25px;
-            background-color: #25d366;
-            color: white;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 32px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
-            z-index: 999;
-            text-decoration: none;
-            transition: transform 0.3s ease, background-color 0.3s ease;
-        }
-        .whatsapp-flotante:hover {
-            transform: scale(1.1);
-            background-color: #20ba5a;
-        }
-
-        footer {
-            text-align: center;
-            padding: 30px 15px;
-            color: #475569;
-            font-size: 13px;
-        }
-        footer a {
-            color: #334155;
-            text-decoration: none;
-            font-weight: 600;
-        }
-        footer a:hover {
-            text-decoration: underline;
-        }
-
-        .descargo-legal {
-            max-width: 700px;
-            margin: 20px auto 10px auto;
-            padding: 12px 18px;
-            background: rgba(30, 41, 59, 0.05);
-            border: 1px dashed #94a3b8;
-            border-radius: 8px;
-            font-size: 11px;
-            color: #475569;
-            text-align: justify;
-            line-height: 1.4;
-        }
-    </style>
+    <title>API Rifa - Sorteo Oficial Chontico Noche</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col justify-between">
 
-    <div class="header-rifa">
-        <div class="dado-contenedor">
-            <div class="dado-flotante">🎲</div>
+    <header class="bg-slate-800 border-b border-slate-700 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-emerald-600 p-2.5 rounded-xl shadow-lg">
+                    <i class="fa-solid fa-ticket text-white text-xl"></i>
+                </div>
+                <div>
+                    <h1 id="titulo-rifa" class="text-xl font-bold tracking-wide text-white">API Rifa - Chontico Noche</h1>
+                    <p class="text-xs text-slate-400" id="subtitulo-rifa">Sorteo oficial autorizado</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <div id="fecha-hoy-badge" class="bg-slate-700/80 px-3 py-1.5 rounded-lg text-xs text-slate-300 border border-slate-600 flex items-center gap-2">
+                    <i class="fa-regular fa-calendar text-emerald-400"></i>
+                    <span id="fecha-dinamica">Cargando fecha...</span>
+                </div>
+                <button onclick="abrirPanelAdmin()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3.5 py-1.5 rounded-lg text-xs font-medium transition border border-slate-600 flex items-center gap-2">
+                    <i class="fa-solid fa-lock text-emerald-400"></i> Admin
+                </button>
+            </div>
         </div>
-        <div class="marca-rifa">Rifa MKDdigital</div>
-        <h1 class="titulo-rifa" id="tituloLoteria">
-            <span style="color: #f59e0b;">GRAN RIFA</span> CHONTICO NOCHE
-        </h1>
-        <div class="caja-info">
-            <div id="fechaHoyHeader" style="font-size: 12px; color: #38bdf8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">📅 Hoy: Cargando...</div>
-            <div style="height: 1px; background: #475569; width: 100%;"></div>
-            <div id="premioHeader" style="font-size: 15px; font-weight: 800; color: #f59e0b;">🏆 Premio Mayor: Cargando...</div>
-            <div style="height: 1px; background: #475569; width: 100%;"></div>
-            <div id="fechaSorteoHeader" style="font-size: 13px; color: #e2e8f0; font-weight: 600;">📅 Sorteo: Cargando...</div>
-            <div style="height: 1px; background: #475569; width: 100%;"></div>
-            <div id="precioBoletoHeader" style="font-size: 14px; font-weight: 800; color: #34d399;">💰 Valor Boleto: Cargando...</div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 flex-grow w-md">
+        <!-- Hero Section / Info Sorteo -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm flex flex-col justify-between">
+                <div>
+                    <span class="text-xs font-semibold uppercase tracking-wider text-emerald-400">Premio Mayor</span>
+                    <h2 id="info-premio" class="text-2xl font-black text-white mt-1">Cargando premio...</h2>
+                </div>
+                <div class="mt-4 pt-4 border-t border-slate-700 flex justify-between text-xs text-slate-400">
+                    <span>Lotería: <strong id="info-loteria" class="text-slate-200">-</strong></span>
+                    <span>Sorteo: <strong id="info-fecha-sorteo" class="text-slate-200">-</strong></span>
+                </div>
+            </div>
+
+            <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm flex flex-col justify-between">
+                <div>
+                    <span class="text-xs font-semibold uppercase tracking-wider text-emerald-400">Valor del Ticket</span>
+                    <h2 id="info-precio" class="text-2xl font-black text-white mt-1">$0</h2>
+                </div>
+                <div class="mt-4 pt-4 border-t border-slate-700 flex justify-between text-xs text-slate-400">
+                    <span>Moneda: <strong id="info-moneda" class="text-slate-200">COP</strong></span>
+                    <span>Disponibles: <strong id="info-disponibles" class="text-emerald-400">0</strong></span>
+                </div>
+            </div>
+
+            <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm flex flex-col justify-between">
+                <div>
+                    <span class="text-xs font-semibold uppercase tracking-wider text-emerald-400">Pasarela Bifrost</span>
+                    <p class="text-xs text-slate-300 mt-1">Pagos seguros integrados en tiempo real con validación automatizada.</p>
+                </div>
+                <div class="mt-4 pt-4 border-t border-slate-700 flex items-center justify-between">
+                    <span class="inline-flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Sistema Activo
+                    </span>
+                    <span class="text-xs text-slate-400">API Rifa v2.4</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Filtros y Buscador -->
+        <section class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="relative w-full sm:w-80">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </span>
+                <input type="text" id="buscador-boletos" placeholder="Buscar número de boleto..." class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 transition">
+            </div>
+            <div class="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+                <button onclick="filtrarEstado('todos')" class="filtro-btn px-4 py-1.5 rounded-lg text-xs font-medium bg-emerald-600 text-white transition shadow-sm">Todos</button>
+                <button onclick="filtrarEstado('disponible')" class="filtro-btn px-4 py-1.5 rounded-lg text-xs font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 transition">Disponibles</button>
+                <button onclick="filtrarEstado('reservado')" class="filtro-btn px-4 py-1.5 rounded-lg text-xs font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 transition">Reservados</button>
+                <button onclick="filtrarEstado('vendido')" class="filtro-btn px-4 py-1.5 rounded-lg text-xs font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 transition">Vendidos</button>
+            </div>
+        </section>
+
+        <!-- Cuadricula de Boletos -->
+        <section class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-300">Seleccione su número de la suerte</h3>
+                <span id="contador-seleccionados" class="text-xs text-emerald-400 font-semibold">0 boletos seleccionados</span>
+            </div>
+            <div id="grid-boletos" class="grid grid-cols-5 sm:grid-cols-10 md:grid-cols-12 lg:grid-cols-15 gap-2 max-h-[500px] overflow-y-auto p-2">
+                <!-- Generado dinámicamente -->
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal de Pago / Bifrost Checkout -->
+    <div id="modal-pago" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <button onclick="cerrarModalPago()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h3 class="text-lg font-bold text-white mb-2">Completar Reserva y Pago</h3>
+            <p class="text-xs text-slate-400 mb-4">Confirme sus datos para procesar el boleto a través de Bifrost.</p>
+            
+            <form id="form-pago" onsubmit="procesarPagoBifrost(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Boleto Seleccionado</label>
+                    <input type="text" id="input-numero-modal" readonly class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-emerald-400 font-bold">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Nombre Completo</label>
+                    <input type="text" id="input-nombre" required placeholder="Ej. Juan Pérez" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Teléfono / WhatsApp</label>
+                    <input type="tel" id="input-telefono" required placeholder="Ej. 3001234567" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Correo Electrónico</label>
+                    <input type="email" id="input-email" required placeholder="correo@ejemplo.com" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                </div>
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-xl text-sm transition shadow-lg shadow-emerald-900/30">
+                    Pagar con Bifrost
+                </button>
+            </form>
         </div>
     </div>
 
-    <div id="grid-boletos"></div>
-
-    <!-- Botón de WhatsApp con ID incorporado -->
-    <a href="#" id="btnWhatsappFlotante" target="_blank" class="whatsapp-flotante" title="Atención y Soporte por WhatsApp">
-        💬
-    </a>
-
-    <footer>
-        <div class="descargo-legal">
-            <strong>Descargo de responsabilidad:</strong> Este sitio web opera exclusivamente como un entorno de prueba, demostración técnica y validación de software para fines didácticos y de desarrollo. No representa una plataforma oficial de juegos de azar comerciales ni realiza transacciones de lotería con validez legal comercial directa.
+    <!-- Panel de Administración Modal -->
+    <div id="modal-admin" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-4xl w-full p-6 shadow-2xl relative max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-shield-halved text-emerald-400"></i> Panel de Administración - Aprobación de Boletos
+                </h3>
+                <button onclick="cerrarPanelAdmin()" class="text-slate-400 hover:text-white transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="overflow-y-auto flex-grow">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-slate-900 text-slate-400 uppercase font-semibold">
+                        <tr>
+                            <th class="p-3">Boleto</th>
+                            <th class="p-3">Cliente</th>
+                            <th class="p-3">Teléfono</th>
+                            <th class="p-3">Fecha Compra</th>
+                            <th class="p-3 text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-reservados-admin" class="divide-y divide-slate-700">
+                        <!-- Llenado dinámico -->
+                    </tbody>
+                </table>
+            </div>
         </div>
-        <p>Rifa MKDDigital © 2026 - Todos los derechos reservados</p>
-        <p style="margin-top: 5px;">
-            <a href="#" onclick="abrirAdmin(); return false;">⚙️ Panel Administrativo</a>
-        </p>
+    </div>
+
+    <footer class="bg-slate-800 border-t border-slate-700 py-4 text-center text-xs text-slate-400">
+        <p>API Rifa &copy; 2026 - Conectado con Sorteos Chontico Noche y Pasarela Bifrost.</p>
     </footer>
 
     <script>
-        let configGlobal = {
-            pais: "colombia",
-            moneda: "COP",
-            simbolo_moneda: "$",
-            loteria_nombre: "Chontico Noche",
-            fecha_sorteo: "2026-09-05T19:00",
-            precio_boleto: 10000,
-            premio_mayor: "700.000 $ COP",
-            nequi_numero: "3150000000",
-            bancolombia_numero: "000-00000-00",
-            pago_movil_datos: "Banco Mercantil | Tel: 0414-0000000 | C.I: V-12345678",
-            whatsapp_numero: "573150000000"
-        };
-
-        function mostrarFechaHoyDinamica() {
-            const ahora = new Date();
-            const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-            const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-            
-            const diaSemana = dias[ahora.getDay()];
-            const diaNum = ahora.getDate();
-            const mes = meses[ahora.getMonth()];
-            const anio = ahora.getFullYear();
-            
-            const texto = `${diaSemana} ${diaNum} de ${mes} del ${anio}`.toUpperCase();
-            const el = document.getElementById('fechaHoyHeader');
-            if (el) {
-                el.innerHTML = `📅 Hoy: <strong>${texto}</strong>`;
-            }
-        }
-
-        function formatearFechaTexto(fechaIso) {
-            if (!fechaIso) return "Por definir";
-            try {
-                const fecha = new Date(fechaIso);
-                if (isNaN(fecha.getTime())) return fechaIso;
-                const opciones = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true };
-                return fecha.toLocaleDateString('es-ES', opciones);
-            } catch (e) {
-                return fechaIso;
-            }
-        }
+        let configGlobal = {};
+        let estadoBoletosCache = {};
+        let boletoSeleccionadoActual = null;
+        let filtroActual = 'todos';
 
         async function cargarConfiguracion() {
             try {
                 const res = await fetch('/api/config');
-                const data = await res.json();
-                if (data && data.loteria_nombre) {
-                    configGlobal = data;
-                    document.getElementById('tituloLoteria').innerHTML = `<span style="color: #f59e0b;">GRAN RIFA</span> ${data.loteria_nombre}`;
-                    document.getElementById('premioHeader').innerHTML = `🏆 Premio Mayor: ${data.premio_mayor || '700.000 $ COP'}`;
-                    document.getElementById('precioBoletoHeader').textContent = `💰 Valor Boleto: ${data.simbolo_moneda || '$'}${Number(data.precio_boleto).toLocaleString()} ${data.moneda}`;
-                    document.getElementById('fechaSorteoHeader').innerHTML = `📅 Fecha del Sorteo: ${formatearFechaTexto(data.fecha_sorteo)}`;
-                    
-                    // Actualizar enlace flotante de WhatsApp de forma dinámica
-                    const btnWa = document.getElementById('btnWhatsappFlotante');
-                    if (btnWa && data.whatsapp_numero) {
-                        const mensajeWa = encodeURIComponent("Hola, deseo más información sobre la rifa y la disponibilidad de boletos.");
-                        btnWa.href = `https://wa.me/${data.whatsapp_numero.replace(/\D/g, '')}?text=${mensajeWa}`;
-                    }
-                }
+                configGlobal = await res.json();
+                
+                document.getElementById('titulo-rifa').innerText = configGlobal.titulo || 'API Rifa - Chontico Noche';
+                document.getElementById('subtitulo-rifa').innerText = configGlobal.subtitulo || 'Plataforma oficial de sorteos';
+                document.getElementById('info-premio').innerText = configGlobal.premio_mayor || 'Premio Mayor';
+                document.getElementById('info-loteria').innerText = configGlobal.loteria_nombre || 'Chontico Noche';
+                document.getElementById('info-fecha-sorteo').innerText = formatearFechaTexto(configGlobal.fecha_sorteo);
+                const simbolo = configGlobal.simbolo_moneda || '$';
+                const precio = Number(configGlobal.precio_boleto || 0).toLocaleString();
+                document.getElementById('info-precio').innerText = `${simbolo}${precio}`;
+                document.getElementById('info-moneda').innerText = configGlobal.moneda || 'COP';
             } catch (e) {
-                console.error("Error al cargar configuración dinámica:", e);
+                console.error('Error al cargar configuración:', e);
+            }
+        }
+
+        function mostrarFechaHoyDinamica() {
+            const opciones = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const fechaStr = new Date().toLocaleDateString('es-CO', opciones);
+            const fechaCap = fechaStr.charAt(0).toUpperCase() + fechaStr.slice(1);
+            document.getElementById('fecha-dinamica').innerText = fechaCap;
+        }
+
+        function formatearFechaTexto(fechaIso) {
+            if (!fechaIso) return 'Por definir';
+            try {
+                const fecha = new Date(fechaIso);
+                return fecha.toLocaleString('es-CO', { dateStyle: 'full', timeStyle: 'short' });
+            } catch {
+                return fechaIso;
             }
         }
 
         async function renderizarBoletos() {
             try {
                 const res = await fetch('/api/boletos');
-                const estadoBoletos = await res.json();
-                const contenedor = document.getElementById('grid-boletos');
-                if (!contenedor) return;
+                estadoBoletosCache = await res.json();
+                const grid = document.getElementById('grid-boletos');
+                grid.innerHTML = '';
 
-                contenedor.innerHTML = '';
-                for (let i = 0; i < 100; i++) {
-                    const numeroStr = String(i).padStart(2, '0');
-                    const boletoData = estadoBoletos[numeroStr];
-                    
-                    let estadoLim = 'DISPONIBLE';
-                    if (boletoData && typeof boletoData === 'object') {
-                        estadoLim = (boletoData.estado || 'DISPONIBLE').toUpperCase();
-                    }
-                    
-                    let claseCss = 'disponible';
-                    let textoEstado = 'Disponible';
+                let totalDisponibles = 0;
+                const totalBoletos = configGlobal.total_boletos || 1000;
+                const buscadorVal = document.getElementById('buscador-boletos').value.toLowerCase();
 
-                    if (estadoLim === 'RESERVADO') {
-                        claseCss = 'reservado';
-                        textoEstado = 'Reservado';
-                    } else if (estadoLim === 'PAGADO' || estadoLim === 'JUGANDO') {
-                        claseCss = 'pagado';
-                        textoEstado = 'Jugando';
-                    }
+                for (let i = 0; i < totalBoletos; i++) {
+                    const numeroStr = String(i).padStart(4, '0');
+                    const info = estadoBoletosCache[numeroStr] || { estado: 'disponible' };
+
+                    if (info.estado === 'disponible') totalDisponibles++;
+
+                    if (filtroActual !== 'todos' && info.estado !== filtroActual) continue;
+                    if (buscadorVal && !numeroStr.includes(buscadorVal)) continue;
+
+                    const btn = document.createElement('button');
+                    btn.innerText = numeroStr;
+                    btn.className = 'py-2 rounded-lg text-xs font-bold transition shadow-sm border ';
                     
-                    const div = document.createElement('div');
-                    div.className = `ticket ${claseCss}`;
-                    div.innerHTML = `<strong>${numeroStr}</strong><span class="estado-texto">${textoEstado}</span>`;
-                    
-                    if (claseCss === 'disponible') {
-                        div.onclick = () => abrirModalReserva(numeroStr);
+                    if (info.estado === 'disponible') {
+                        btn.className += 'bg-slate-700/80 border-slate-600 text-slate-200 hover:bg-emerald-600 hover:border-emerald-500 hover:text-white';
+                        btn.onclick = () => seleccionarBoleto(numeroStr);
+                    } else if (info.estado === 'reservado') {
+                        btn.className += 'bg-amber-500/20 border-amber-500/50 text-amber-300 cursor-not-allowed';
+                        btn.title = `Reservado por: ${info.nombre || 'Cliente'}`;
+                    } else if (info.estado === 'vendido') {
+                        btn.className += 'bg-emerald-600/30 border-emerald-500/60 text-emerald-300 cursor-not-allowed';
+                        btn.title = `Vendido a: ${info.nombre || 'Cliente'}`;
                     }
-                    contenedor.appendChild(div);
+
+                    grid.appendChild(btn);
                 }
+
+                document.getElementById('info-disponibles').innerText = totalDisponibles;
             } catch (e) {
-                console.error("Error al sincronizar boletos:", e);
+                console.error('Error al renderizar boletos:', e);
             }
         }
 
-        function abrirModalReserva(numeroBoleto) {
-            if (document.getElementById('modal-comprador')) document.getElementById('modal-comprador').remove();
+        document.getElementById('buscador-boletos').addEventListener('input', () => {
+            renderizarBoletos();
+        });
 
-            let infoPagoTexto = '';
-            if (configGlobal.pais === 'colombia' || configGlobal.moneda === 'COP') {
-                infoPagoTexto = `Paga vía <b>Nequi</b> (${configGlobal.nequi_numero}) o <b>Bancolombia</b> (${configGlobal.bancolombia_numero}) con código QR o transferencia.`;
-            } else {
-                infoPagoTexto = `Paga vía <b>Pago Móvil / Divisas</b>:<br><small>${configGlobal.pago_movil_datos}</small>`;
-            }
-
-            const modalHtml = `
-                <div id="modal-comprador" class="modal">
-                    <div class="modal-content">
-                        <h2 style="text-align: center; margin-top:0;">${configGlobal.loteria_nombre} 🎟️</h2>
-                        <h3 style="text-align: center; color: #0284c7; margin: 5px 0;">Reservar Boleto: #${numeroBoleto}</h3>
-                        <p style="font-size: 13px; color: #334155; text-align: center; background: #f1f5f9; padding: 10px; border-radius: 6px;">
-                            Valor: <b>${configGlobal.simbolo_moneda || '$'}${Number(configGlobal.precio_boleto).toLocaleString()} ${configGlobal.moneda}</b><br>
-                            ${infoPagoTexto}<br>
-                            <span style="color: #e11d48; font-weight: bold;">Tienes 5 minutos para reportar tu pago.</span>
-                        </p>
-                        <form id="form-reserva">
-                            <input type="text" id="nombre" placeholder="Nombre completo" required />
-                            <input type="tel" id="telefono" placeholder="Teléfono / WhatsApp (ej: +57... o +58...)" required />
-                            <input type="text" id="ciudad" placeholder="Ciudad / Estado" required />
-                            <input type="email" id="email" placeholder="Correo electrónico" required />
-                            
-                            <div style="margin: 10px 0; font-size: 12px; display: flex; align-items: flex-start; gap: 8px;">
-                                <input type="checkbox" id="acepta-datos" required style="margin-top: 3px;" />
-                                <label for="acepta-datos" style="cursor: pointer; color: #334155;">
-                                    Autorizo el tratamiento de mis datos personales para gestionar esta rifa.
-                                </label>
-                            </div>
-
-                            <div class="modal-buttons">
-                                <button type="submit" class="btn-guardar">Reservar (5 min)</button>
-                                <button type="button" id="btn-cancelar" class="btn-cancelar">Cancelar</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            `;
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-            document.getElementById('btn-cancelar').onclick = () => document.getElementById('modal-comprador').remove();
-            
-            document.getElementById('form-reserva').onsubmit = async (e) => {
-                e.preventDefault();
-                const datos = {
-                    numero: numeroBoleto,
-                    nombre: document.getElementById('nombre').value,
-                    telefono: document.getElementById('telefono').value,
-                    ciudad: document.getElementById('ciudad').value,
-                    email: document.getElementById('email').value,
-                    loteria: configGlobal.loteria_nombre,
-                    fechaSorteo: formatearFechaTexto(configGlobal.fecha_sorteo),
-                    acepta_datos: document.getElementById('acepta-datos').checked
-                };
-
-                try {
-                    const respuesta = await fetch('/api/reservar', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(datos)
-                    });
-                    const resultado = await respuesta.json();
-                    if (!respuesta.ok) throw new Error(resultado.error || "Error al reservar");
-                    
-                    document.getElementById('modal-comprador').remove();
-                    alert(`¡Boleto #${numeroBoleto} reservado temporalmente!`);
-                    renderizarBoletos();
-                } catch (error) {
-                    alert(error.message);
-                }
-            };
+        function filtrarEstado(estado) {
+            filtroActual = estado;
+            document.querySelectorAll('.filtro-btn').forEach(btn => {
+                btn.classList.remove('bg-emerald-600', 'text-white');
+                btn.classList.add('bg-slate-700', 'text-slate-300');
+            });
+            event.target.classList.remove('bg-slate-700', 'text-slate-300');
+            event.target.classList.add('bg-emerald-600', 'text-white');
+            renderizarBoletos();
         }
 
-        function abrirAdmin() {
-            if (document.getElementById('modalAdmin')) document.getElementById('modalAdmin').remove();
-
-            const modalAdminHtml = `
-                <div id="modalAdmin" class="modal">
-                    <div class="modal-content">
-                        <h3 style="text-align:center; color:#1e293b; margin-top:0;">Panel de Administración ⚙️</h3>
-                        
-                        <div id="divLogin">
-                            <p style="font-size:13px;">Ingrese contraseña de acceso:</p>
-                            <div style="position: relative; display: flex; align-items: center; margin: 8px 0;">
-                                <input type="password" id="inputPassword" placeholder="Contraseña" style="width: 100%; padding-right: 35px; margin: 0;" />
-                                <span onclick="togglePassword()" id="iconoOjo" style="position: absolute; right: 10px; cursor: pointer; user-select: none; font-size: 16px;">👁️</span>
-                            </div>
-                            <div class="modal-buttons">
-                                <button type="button" class="btn-guardar" onclick="verificarPassword()">Ingresar</button>
-                                <button type="button" class="btn-cancelar" onclick="document.getElementById('modalAdmin').remove()">Cerrar</button>
-                            </div>
-                        </div>
-
-                        <div id="divContenidoAdmin" style="display: none;">
-                            <h4 style="color: #333; margin-bottom: 5px;">🌍 Selección de Mercado / País</h4>
-                            <select id="adminPais" onchange="cambiarPlantillaPais()" class="input-control">
-                                <option value="colombia">Colombia (COP - Nequi / Bancolombia)</option>
-                                <option value="venezuela_ves">Venezuela (Bolívares - Pago Móvil)</option>
-                                <option value="venezuela_usd">Venezuela (Dólares USD - Divisas)</option>
-                            </select>
-
-                            <h4 style="color: #333; margin: 10px 0 5px 0;">⚙️ Configuración General</h4>
-                            <label style="font-size:11px; font-weight:bold;">Nombre Lotería:</label>
-                            <input type="text" id="adminLoteria" value="${configGlobal.loteria_nombre}" />
-                            
-                            <label style="font-size:11px; font-weight:bold;">Premio Mayor (Texto e importe):</label>
-                            <input type="text" id="adminPremio" value="${configGlobal.premio_mayor}" />
-
-                            <label style="font-size:11px; font-weight:bold;">Fecha y Hora del Sorteo (Calendario):</label>
-                            <input type="datetime-local" id="adminFechaSorteo" value="${configGlobal.fecha_sorteo || ''}" />
-
-                            <label style="font-size:11px; font-weight:bold;">Precio del Boleto:</label>
-                            <input type="number" id="adminPrecio" value="${configGlobal.precio_boleto}" />
-
-                            <label style="font-size:11px; font-weight:bold;">Símbolo Moneda ($ / Bs):</label>
-                            <input type="text" id="adminSimbolo" value="${configGlobal.simbolo_moneda}" />
-
-                            <label style="font-size:11px; font-weight:bold;">Código Moneda (COP / VES / USD):</label>
-                            <input type="text" id="adminMoneda" value="${configGlobal.moneda}" />
-
-                            <h4 style="color: #333; margin: 10px 0 5px 0;">💳 Datos de Pago y Contacto</h4>
-                            <label style="font-size:11px; font-weight:bold;">Número Nequi (Colombia):</label>
-                            <input type="text" id="adminNequi" value="${configGlobal.nequi_numero}" />
-
-                            <label style="font-size:11px; font-weight:bold;">Número Bancolombia (Colombia):</label>
-                            <input type="text" id="adminBancolombia" value="${configGlobal.bancolombia_numero}" />
-
-                            <label style="font-size:11px; font-weight:bold;">Datos Pago Móvil (Venezuela):</label>
-                            <input type="text" id="adminPagoMovil" value="${configGlobal.pago_movil_datos}" />
-
-                            <label style="font-size:11px; font-weight:bold;">WhatsApp de Soporte/Botón (Ej: 573150000000):</label>
-                            <input type="text" id="adminWhatsapp" value="${configGlobal.whatsapp_numero || ''}" />
-
-                            <button type="button" class="btn-guardar" onclick="guardarConfiguracionAdmin()" style="margin-top: 10px;">Guardar Cambios</button>
-
-                            <h4 style="color: #333; margin: 15px 0 5px 0;">🎟️ Reservas Pendientes</h4>
-                            <div id="listaReservados" style="max-height: 120px; overflow-y: auto; font-size: 12px; border: 1px solid #cbd5e1; padding: 6px; border-radius: 6px;">Cargando...</div>
-                            
-                            <div style="margin-top: 10px; border-top: 1px solid #cbd5e1; padding-top: 8px;">
-                                <h4 style="color: #333; margin-bottom: 3px;">🔑 Cambiar Clave Admin</h4>
-                                <input type="password" id="nuevaPassword" placeholder="Nueva contraseña" />
-                                <button type="button" class="btn-guardar" onclick="actualizarPassword()" style="margin-top: 3px;">Actualizar Clave</button>
-                            </div>
-
-                            <div class="modal-buttons" style="margin-top: 12px;">
-                                <button type="button" class="btn-cancelar" onclick="document.getElementById('modalAdmin').remove()">Salir</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            document.body.insertAdjacentHTML('beforeend', modalAdminHtml);
-            document.getElementById('adminPais').value = configGlobal.pais || 'colombia';
+        function seleccionarBoleto(numero) {
+            boletoSeleccionadoActual = numero;
+            document.getElementById('input-numero-modal').value = `Boleto #${numero}`;
+            document.getElementById('modal-pago').classList.remove('hidden');
         }
 
-        function cambiarPlantillaPais() {
-            const paisSel = document.getElementById('adminPais').value;
-            if (paisSel === 'colombia') {
-                document.getElementById('adminMoneda').value = 'COP';
-                document.getElementById('adminSimbolo').value = '$';
-                document.getElementById('adminPrecio').value = '10000';
-                document.getElementById('adminPremio').value = '700.000 $ COP';
-                document.getElementById('adminLoteria').value = 'Chontico Noche';
-            } else if (paisSel === 'venezuela_ves') {
-                document.getElementById('adminMoneda').value = 'VES';
-                document.getElementById('adminSimbolo').value = 'Bs. ';
-                document.getElementById('adminPrecio').value = '50';
-                document.getElementById('adminPremio').value = '5.000 Bs.';
-                document.getElementById('adminLoteria').value = 'Triple Táchira';
-            } else if (paisSel === 'venezuela_usd') {
-                document.getElementById('adminMoneda').value = 'USD';
-                document.getElementById('adminSimbolo').value = '$';
-                document.getElementById('adminPrecio').value = '3';
-                document.getElementById('adminPremio').value = '$300 USD';
-                document.getElementById('adminLoteria').value = 'Lotería de Animalitos';
-            }
+        function cerrarModalPago() {
+            document.getElementById('modal-pago').classList.add('hidden');
+            document.getElementById('form-pago').reset();
         }
 
-        function togglePassword() {
-            const input = document.getElementById('inputPassword');
-            const icono = document.getElementById('iconoOjo');
-            if (input.type === 'password') {
-                input.type = 'text';
-                icono.textContent = '🙈';
-            } else {
-                input.type = 'password';
-                icono.textContent = '👁️';
-            }
-        }
-
-        async function verificarPassword() {
-            const password = document.getElementById('inputPassword').value;
-            try {
-                const res = await fetch('/api/admin/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ password })
-                });
-                const data = await res.json();
-                if (data.success) {
-                    document.getElementById('divLogin').style.display = 'none';
-                    document.getElementById('divContenidoAdmin').style.display = 'block';
-                    cargarReservadosAdmin();
-                } else {
-                    alert('Contraseña incorrecta');
-                }
-            } catch (e) {
-                alert('Error al verificar credenciales.');
-            }
-        }
-
-        async function guardarConfiguracionAdmin() {
-            const datosConfig = {
-                pais: document.getElementById('adminPais').value,
-                loteria_nombre: document.getElementById('adminLoteria').value,
-                premio_mayor: document.getElementById('adminPremio').value,
-                fecha_sorteo: document.getElementById('adminFechaSorteo').value,
-                precio_boleto: document.getElementById('adminPrecio').value,
-                simbolo_moneda: document.getElementById('adminSimbolo').value,
-                moneda: document.getElementById('adminMoneda').value,
-                nequi_numero: document.getElementById('adminNequi').value,
-                bancolombia_numero: document.getElementById('adminBancolombia').value,
-                pago_movil_datos: document.getElementById('adminPagoMovil').value,
-                whatsapp_numero: document.getElementById('adminWhatsapp').value
-            };
+        async function procesarPagoBifrost(e) {
+            e.preventDefault();
+            const nombre = document.getElementById('input-nombre').value;
+            const telefono = document.getElementById('input-telefono').value;
+            const email = document.getElementById('input-email').value;
 
             try {
-                const res = await fetch('/api/config', {
+                const res = await fetch('/api/reservar', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(datosConfig)
+                    body: JSON.stringify({ numero: boletoSeleccionadoActual, nombre, telefono, email })
                 });
                 const data = await res.json();
+
                 if (data.success) {
-                    alert('¡Configuración actualizada con éxito!');
-                    await cargarConfiguracion();
-                    document.getElementById('modalAdmin').remove();
+                    // Integración con Bifrost Gateway (https://bifrost.com.co/)
+                    if (data.bifrostUrl) {
+                        window.location.href = data.bifrostUrl;
+                    } else {
+                        alert(`¡Boleto #${boletoSeleccionadoActual} reservado con éxito! Pendiente de aprobación.`);
+                        cerrarModalPago();
+                        renderizarBoletos();
+                    }
                 } else {
-                    alert('Error al guardar configuración.');
+                    alert(data.message || 'No se pudo procesar la reserva.');
                 }
-            } catch (e) {
-                alert('Error de conexión con el servidor.');
+            } catch (err) {
+                alert('Error al conectar con la pasarela Bifrost.');
             }
         }
 
-        async function actualizarPassword() {
-            const nuevaPassword = document.getElementById('nuevaPassword').value;
-            if (!nuevaPassword || nuevaPassword.trim() === "") {
-                alert("Por favor ingresa una contraseña válida.");
-                return;
+        function abrirPanelAdmin() {
+            const pass = prompt('Ingrese clave de Administrador:');
+            if (pass === 'admin2026' || pass === 'Admin123*') {
+                document.getElementById('modal-admin').classList.remove('hidden');
+                cargarReservadosAdmin();
+            } else if (pass !== null) {
+                alert('Contraseña incorrecta.');
             }
-            try {
-                const res = await fetch('/api/admin/password', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nuevaPassword })
-                });
-                const data = await res.json();
-                if (data.success) {
-                    alert("¡Contraseña actualizada con éxito!");
-                    document.getElementById('nuevaPassword').value = "";
-                } else {
-                    alert(data.error || "No se pudo actualizar la contraseña.");
-                }
-            } catch (e) {
-                alert("Error de conexión.");
-            }
+        }
+
+        function cerrarPanelAdmin() {
+            document.getElementById('modal-admin').classList.add('hidden');
         }
 
         async function cargarReservadosAdmin() {
-            const contenedor = document.getElementById('listaReservados');
-            contenedor.innerHTML = 'Cargando...';
             try {
-                const res = await fetch('/api/boletos', { cache: 'no-store' });
-                const dataBoletos = await res.json();
+                const res = await fetch('/api/boletos');
+                const boletos = await res.json();
+                const tbody = document.getElementById('tabla-reservados-admin');
+                tbody.innerHTML = '';
 
-                let html = '';
-                for (const [id, boleto] of Object.entries(dataBoletos)) {
-                    if (typeof boleto === 'object' && boleto !== null && boleto.estado === 'RESERVADO') {
-                        html += `<div style="padding: 4px 0; border-bottom: 1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
-                            <span><b>#${id}</b> - ${boleto.nombre || 'Reservado'}</span>
-                            <button onclick="aprobarPagoAdmin('${id}')" style="background:#059669; color:#fff; border:none; padding:3px 6px; border-radius:4px; cursor:pointer; font-size:11px;">Aprobar</button>
-                        </div>`;
+                let encontrados = 0;
+                for (const [numero, info] of Object.entries(boletos)) {
+                    if (info.estado === 'reservado') {
+                        encontrados++;
+                        const tr = document.createElement('tr');
+                        tr.className = 'hover:bg-slate-700/50 transition';
+                        tr.innerHTML = `
+                            <td class="p-3 font-bold text-emerald-400">#${numero}</td>
+                            <td class="p-3">${info.nombre || 'N/A'}</td>
+                            <td class="p-3">${info.telefono || 'N/A'}</td>
+                            <td class="p-3">${info.fechaCompra || 'Reciente'}</td>
+                            <td class="p-3 text-center">
+                                <button onclick="aprobarPagoAdmin('${numero}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded-lg text-xs font-semibold transition shadow-sm">
+                                    Aprobar
+                                </button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
                     }
                 }
-                contenedor.innerHTML = html || '<p>No hay reservas activas.</p>';
-            } catch (error) {
-                contenedor.innerHTML = '<p style="color: red;">Error al cargar datos.</p>';
+
+                if (encontrados === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-500">No hay boletos pendientes de aprobación.</td></tr>`;
+                }
+            } catch (e) {
+                console.error('Error al cargar tabla admin:', e);
             }
         }
 
