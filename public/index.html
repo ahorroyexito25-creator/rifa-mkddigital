@@ -586,7 +586,8 @@
                             <textarea id="adminPagoMovil" rows="2">${configGlobal.pago_movil_datos || ''}</textarea>
 
                             <button type="button" class="btn-guardar" onclick="guardarConfiguracionAdmin()" style="margin-top: 10px;">Guardar Cambios</button>
-
+                            <button type="button" class="btn-cancelar" onclick="reiniciarSorteoTablero()" style="margin-top: 10px; width: 100%; background: #dc2626; color: white; padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">🔄 Iniciar Nuevo Sorteo (Poner todo en verde)</button>
+                            
                             <h4 style="color: #333; margin: 15px 0 5px 0;">🎟️ Reservas Pendientes</h4>
                             <div id="listaReservados" style="max-height: 120px; overflow-y: auto; font-size: 12px; border: 1px solid #cbd5e1; padding: 6px; border-radius: 6px;">Cargando...</div>
                             
