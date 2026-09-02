@@ -689,6 +689,33 @@
             await cargarConfiguracion();
             await renderizarBoletos();
         };
+const clienteTel = boletoInfo.telefono || '';
+                    const codigoAntifraude = data.codigoAntifraude || boletoInfo.codigoAntifraude || 'N/A';
+
+                    const resWp = await fetch(`/api/whatsapp/generar/${numero}`);
+                    const dataWp = await resWp.json();
+                    
+                    if (dataWp.success && dataWp.url) {
+                        if (confirm(`El pago del boleto #${numero} se aprobó correctamente.\n\n¿Desea abrir WhatsApp para enviar el comprobante digital y el código antifraude (${codigoAntifraude}) al cliente?`)) {
+                            window.open(dataWp.url, '_blank');
+                        }
+                    }
+
+                    cargarReservadosAdmin();
+                    renderizarBoletos();
+                } else {
+                    alert("Error al aprobar el pago.");
+                }
+            } catch (e) {
+                alert("Error de conexión al aprobar.");
+            }
+        }
+
+        window.onload = () => {
+            mostrarFechaHoyDinamica();
+            cargarConfiguracion();
+            renderizarBoletos();
+        };
     </script>
 </body>
 </html>
