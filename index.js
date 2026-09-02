@@ -19,10 +19,7 @@ app.get('/', (req, res) => {
     if (fs.existsSync(indexPath)) {
         res.sendFile(indexPath);
     } else {
-        res.status(200).json({ 
-            status: "online", 
-            mensaje: "API Rifa Activa. El archivo index.html no se encuentra en la carpeta public." 
-        });
+        res.status(200).json({ status: "online", mensaje: "API Rifa Activa" });
     }
 });
 
@@ -48,33 +45,31 @@ function cargarBD() {
                     nequi_numero: '3150000000',
                     bancolombia_numero: '000-00000-00',
                     pago_movil_datos: 'Banco: Mercantil | Tel: 0414-0000000 | C.I: V-12345678',
-                    admin_password: '1234'
+                    admin_password: '1234',
+                    descargo_legal: 'Plataforma de gestión recreativa y de entretenimiento con fines demostrativos. Las rifas operan bajo términos de participación privada y simulación de eventos oficiales.'
                 },
                 boletos: {},
                 historial: []
             };
             fs.writeFileSync(DB_FILE, JSON.stringify(initialData, null, 2), 'utf8');
         }
-        return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+        const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+        if (!data.config.descargo_legal) {
+            data.config.descargo_legal = 'Plataforma de gestión recreativa y de entretenimiento con fines demostrativos.';
+        }
+        return data;
     } catch (error) {
         console.error('Error al cargar BD:', error);
         return {
             config: { 
-                id: 1, 
-                pais: 'colombia',
-                moneda: 'COP',
-                simbolo_moneda: '$',
-                loteria_nombre: 'Chontico Noche', 
-                fecha_sorteo: '2026-09-05T19:00',
-                precio_boleto: 10000, 
-                premio_mayor: '700.000 $ COP',
-                nequi_numero: '3150000000', 
-                bancolombia_numero: '000-00000-00',
-                pago_movil_datos: 'Banco: Mercantil | Tel: 0414-0000000 | C.I: V-12345678',
-                admin_password: '1234' 
+                id: 1, pais: 'colombia', moneda: 'COP', simbolo_moneda: '$',
+                loteria_nombre: 'Chontico Noche', fecha_sorteo: '2026-09-05T19:00',
+                precio_boleto: 10000, premio_mayor: '700.000 $ COP',
+                nequi_numero: '3150000000', bancolombia_numero: '000-00000-00',
+                pago_movil_datos: 'Banco Mercantil', admin_password: '1234',
+                descargo_legal: 'Plataforma de gestión recreativa y de entretenimiento con fines demostrativos.'
             },
-            boletos: {},
-            historial: []
+            boletos: {}, historial: []
         };
     }
 }
@@ -94,7 +89,7 @@ app.get('/api/config', (req, res) => {
 
 app.post('/api/config', (req, res) => {
     const db = cargarBD();
-    const { pais, moneda, simbolo_moneda, loteria_nombre, fecha_sorteo, precio_boleto, premio_mayor, nequi_numero, bancolombia_numero, pago_movil_datos } = req.body;
+    const { pais, moneda, simbolo_moneda, loteria_nombre, fecha_sorteo, precio_boleto, premio_mayor, nequi_numero, bancolombia_numero, pago_movil_datos, descargo_legal } = req.body;
     
     db.config.pais = pais || db.config.pais;
     db.config.moneda = moneda || db.config.moneda;
@@ -106,6 +101,7 @@ app.post('/api/config', (req, res) => {
     db.config.nequi_numero = nequi_numero !== undefined ? nequi_numero : db.config.nequi_numero;
     db.config.bancolombia_numero = bancolombia_numero !== undefined ? bancolombia_numero : db.config.bancolombia_numero;
     db.config.pago_movil_datos = pago_movil_datos !== undefined ? pago_movil_datos : db.config.pago_movil_datos;
+    db.config.descargo_legal = descargo_legal !== undefined ? descargo_legal : db.config.descargo_legal;
     
     guardarBD(db);
     res.json({ success: true });
@@ -154,7 +150,7 @@ app.post('/api/reservar', (req, res) => {
     const { numero, nombre, telefono, ciudad, email, loteria, fechaSorteo, acepta_datos } = req.body;
 
     if (!acepta_datos) {
-        return res.status(400).json({ error: "Debe aceptar el tratamiento de datos." });
+        return res.status(400).json({ error: "Debe aceptar el tratamiento de datos y los términos legales." });
     }
 
     if (db.boletos[numero] && db.boletos[numero].estado !== 'DISPONIBLE') {
@@ -163,12 +159,7 @@ app.post('/api/reservar', (req, res) => {
 
     const fechaCompra = new Date().toLocaleString('es-ES', { 
         timeZone: 'America/Bogota',
-        day: 'numeric', 
-        month: 'short', 
-        year: 'numeric', 
-        hour: 'numeric', 
-        minute: '2-digit', 
-        hour12: true 
+        day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true 
     });
 
     db.boletos[numero] = {
