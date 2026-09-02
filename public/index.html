@@ -577,13 +577,13 @@
                             <input type="hidden" id="adminNequiQr" value="${configGlobal.nequi_qr || ''}" />
 
                             <label style="font-size:11px; font-weight:bold;">Número Bancolombia:</label>
-                            <input type="text" id="adminBancolombia" value="${configGlobal.bancolombia_numero}" />
+                            <input type="text" id="adminBancolombia" value="${configGlobal.bancolombia_numero || ''}" />
                             <label style="font-size:11px; font-weight:bold;">Imagen QR Bancolombia (Subir foto):</label>
                             <input type="file" id="fileBancolombiaQr" accept="image/*" onchange="convertirQR('bancolombia')" />
                             <input type="hidden" id="adminBancolombiaQr" value="${configGlobal.bancolombia_qr || ''}" />
 
                             <label style="font-size:11px; font-weight:bold;">Datos Pago Móvil / Otros (Texto):</label>
-                            <textarea id="adminPagoMovil" rows="2">${configGlobal.pago_movil_datos}</textarea>
+                            <textarea id="adminPagoMovil" rows="2">${configGlobal.pago_movil_datos || ''}</textarea>
 
                             <button type="button" class="btn-guardar" onclick="guardarConfiguracionAdmin()" style="margin-top: 10px;">Guardar Cambios</button>
 
