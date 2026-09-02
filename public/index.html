@@ -389,17 +389,17 @@
             document.getElementById('btn-cancelar').onclick = () => document.getElementById('modal-comprador').remove();
             
             document.getElementById('form-reserva').onsubmit = async (e) => {
-                e.preventDefault();
-                const datos = {
-                    numero: numeroBoleto,
-                    nombre: document.getElementById('nombre').value,
-                    telefono: document.getElementById('telefono').value,
-                    ciudad: document.getElementById('ciudad').value,
-                    email: document.getElementById('email').value,
-                    loteria: configGlobal.loteria_nombre,
-                    fechaSorteo: formatearFechaTexto(configGlobal.fecha_sorteo),
-                    acepta_datos: document.getElementById('acepta-datos'].checked
-                };
+    e.preventDefault();
+    const datos = {
+        numero: numeroBoleto,
+        nombre: document.getElementById('nombre').value,
+        telefono: document.getElementById('telefono').value,
+        ciudad: document.getElementById('ciudad').value,
+        email: document.getElementById('email').value,
+        loteria: configGlobal.loteria_nombre,
+        fechaSorteo: formatearFechaTexto(configGlobal.fecha_sorteo),
+        aceptas_datos: document.getElementById('aceptas-datos').checked
+    };
 
                 try {
                     const respuesta = await fetch('/api/reservar', {
