@@ -29,24 +29,6 @@ app.get('/', (req, res) => {
 const DATA_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH || path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'rifa.json');
 
-function limpiarBoletosExpirados(db) {
-    const ahora = Date.now();
-    const tiempoExpiracion = 5 * 60 * 1000; 
-    let modificado = false;
-    
-    for (const [numero, boleto] of Object.entries(db.boletos)) {
-        if (boleto && boleto.estado === 'RESERVADO' && boleto.timestampReserva) {
-            if (ahora - boleto.timestampReserva > tiempoExpiracion) {
-                delete db.boletos[numero];
-                modificado = true;
-            }
-        }
-    }
-    if (modificado) {
-        guardarBD(db);
-    }
-}
-
 function cargarBD() {
     try {
         if (!fs.existsSync(DATA_DIR)) {
@@ -66,7 +48,6 @@ function cargarBD() {
                     nequi_numero: '3150000000',
                     bancolombia_numero: '000-00000-00',
                     pago_movil_datos: 'Banco: Mercantil | Tel: 0414-0000000 | C.I: V-12345678',
-                    whatsapp_numero: '573150000000',
                     admin_password: '1234'
                 },
                 boletos: {},
@@ -74,12 +55,10 @@ function cargarBD() {
             };
             fs.writeFileSync(DB_FILE, JSON.stringify(initialData, null, 2), 'utf8');
         }
-        const db = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-        limpiarBoletosExpirados(db);
-        return db;
+        return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
     } catch (error) {
         console.error('Error al cargar BD:', error);
-        const fallbackDb = {
+        return {
             config: { 
                 id: 1, 
                 pais: 'colombia',
@@ -92,14 +71,11 @@ function cargarBD() {
                 nequi_numero: '3150000000', 
                 bancolombia_numero: '000-00000-00',
                 pago_movil_datos: 'Banco: Mercantil | Tel: 0414-0000000 | C.I: V-12345678',
-                whatsapp_numero: '573150000000',
                 admin_password: '1234' 
             },
             boletos: {},
             historial: []
         };
-        limpiarBoletosExpirados(fallbackDb);
-        return fallbackDb;
     }
 }
 
@@ -118,7 +94,7 @@ app.get('/api/config', (req, res) => {
 
 app.post('/api/config', (req, res) => {
     const db = cargarBD();
-    const { pais, moneda, simbolo_moneda, loteria_nombre, fecha_sorteo, precio_boleto, premio_mayor, nequi_numero, bancolombia_numero, pago_movil_datos, whatsapp_numero } = req.body;
+    const { pais, moneda, simbolo_moneda, loteria_nombre, fecha_sorteo, precio_boleto, premio_mayor, nequi_numero, bancolombia_numero, pago_movil_datos } = req.body;
     
     db.config.pais = pais || db.config.pais;
     db.config.moneda = moneda || db.config.moneda;
@@ -130,7 +106,6 @@ app.post('/api/config', (req, res) => {
     db.config.nequi_numero = nequi_numero !== undefined ? nequi_numero : db.config.nequi_numero;
     db.config.bancolombia_numero = bancolombia_numero !== undefined ? bancolombia_numero : db.config.bancolombia_numero;
     db.config.pago_movil_datos = pago_movil_datos !== undefined ? pago_movil_datos : db.config.pago_movil_datos;
-    db.config.whatsapp_numero = whatsapp_numero !== undefined ? whatsapp_numero : db.config.whatsapp_numero;
     
     guardarBD(db);
     res.json({ success: true });
