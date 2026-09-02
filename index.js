@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); // Aumentado límite para aceptar imágenes QR en base64
 
 const publicDir = path.join(__dirname, 'public');
 app.use(express.static(publicDir));
@@ -29,6 +29,24 @@ app.get('/', (req, res) => {
 const DATA_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH || path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'rifa.json');
 
+function limpiarReservasExpiradas(db) {
+    const ahora = Date.now();
+    let modificado = false;
+    const CINCO_MINUTOS = 5 * 60 * 1000;
+    
+    if (db.boletos) {
+        for (const [numero, boleto] of Object.entries(db.boletos)) {
+            if (boleto.estado === 'RESERVADO' && boleto.timestampReserva) {
+                if (ahora - boleto.timestampReserva > CINCO_MINUTOS) {
+                    delete db.boletos[numero];
+                    modificado = true;
+                }
+            }
+        }
+    }
+    return modificado;
+}
+
 function cargarBD() {
     try {
         if (!fs.existsSync(DATA_DIR)) {
@@ -46,8 +64,11 @@ function cargarBD() {
                     precio_boleto: 10000,
                     premio_mayor: '700.000 $ COP',
                     nequi_numero: '3150000000',
+                    nequi_qr: '',
                     bancolombia_numero: '000-00000-00',
+                    bancolombia_qr: '',
                     pago_movil_datos: 'Banco: Mercantil | Tel: 0414-0000000 | C.I: V-12345678',
+                    whatsapp_numero: '573150000000',
                     admin_password: '1234'
                 },
                 boletos: {},
@@ -55,7 +76,18 @@ function cargarBD() {
             };
             fs.writeFileSync(DB_FILE, JSON.stringify(initialData, null, 2), 'utf8');
         }
-        return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+        const db = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+        
+        // Asegurar campos nuevos si no existen
+        if (!db.config.whatsapp_numero) db.config.whatsapp_numero = '573150000000';
+        if (db.config.nequi_qr === undefined) db.config.nequi_qr = '';
+        if (db.config.bancolombia_qr === undefined) db.config.bancolombia_qr = '';
+
+        if (limpiarReservasExpiradas(db)) {
+            guardarBD(db);
+        }
+
+        return db;
     } catch (error) {
         console.error('Error al cargar BD:', error);
         return {
@@ -68,9 +100,12 @@ function cargarBD() {
                 fecha_sorteo: '2026-09-05T19:00',
                 precio_boleto: 10000, 
                 premio_mayor: '700.000 $ COP',
-                nequi_numero: '3150000000', 
+                nequi_numero: '3150000000',
+                nequi_qr: '',
                 bancolombia_numero: '000-00000-00',
+                bancolombia_qr: '',
                 pago_movil_datos: 'Banco: Mercantil | Tel: 0414-0000000 | C.I: V-12345678',
+                whatsapp_numero: '573150000000',
                 admin_password: '1234' 
             },
             boletos: {},
@@ -94,7 +129,11 @@ app.get('/api/config', (req, res) => {
 
 app.post('/api/config', (req, res) => {
     const db = cargarBD();
-    const { pais, moneda, simbolo_moneda, loteria_nombre, fecha_sorteo, precio_boleto, premio_mayor, nequi_numero, bancolombia_numero, pago_movil_datos } = req.body;
+    const { 
+        pais, moneda, simbolo_moneda, loteria_nombre, fecha_sorteo, 
+        precio_boleto, premio_mayor, nequi_numero, nequi_qr, 
+        bancolombia_numero, bancolombia_qr, pago_movil_datos, whatsapp_numero 
+    } = req.body;
     
     db.config.pais = pais || db.config.pais;
     db.config.moneda = moneda || db.config.moneda;
@@ -104,8 +143,11 @@ app.post('/api/config', (req, res) => {
     db.config.precio_boleto = precio_boleto ? Number(precio_boleto) : db.config.precio_boleto;
     db.config.premio_mayor = premio_mayor || db.config.premio_mayor;
     db.config.nequi_numero = nequi_numero !== undefined ? nequi_numero : db.config.nequi_numero;
+    db.config.nequi_qr = nequi_qr !== undefined ? nequi_qr : db.config.nequi_qr;
     db.config.bancolombia_numero = bancolombia_numero !== undefined ? bancolombia_numero : db.config.bancolombia_numero;
+    db.config.bancolombia_qr = bancolombia_qr !== undefined ? bancolombia_qr : db.config.bancolombia_qr;
     db.config.pago_movil_datos = pago_movil_datos !== undefined ? pago_movil_datos : db.config.pago_movil_datos;
+    db.config.whatsapp_numero = whatsapp_numero !== undefined ? whatsapp_numero : db.config.whatsapp_numero;
     
     guardarBD(db);
     res.json({ success: true });
@@ -151,6 +193,8 @@ app.get('/api/boletos', (req, res) => {
 
 app.post('/api/reservar', (req, res) => {
     const db = cargarBD();
+    limpiarReservasExpiradas(db);
+    
     const { numero, nombre, telefono, ciudad, email, loteria, fechaSorteo, acepta_datos } = req.body;
 
     if (!acepta_datos) {
@@ -185,7 +229,7 @@ app.post('/api/reservar', (req, res) => {
     });
 
     guardarBD(db);
-    res.json({ success: true });
+    res.json({ success: true, timestampReserva: db.boletos[numero].timestampReserva });
 });
 
 app.post('/api/pagar/:numero', (req, res) => {
