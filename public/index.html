@@ -353,73 +353,74 @@
         }
 
         function abrirModalReserva(numeroBoleto) {
-            if (document.getElementById('modal-comprador')) document.getElementById('modal-comprador').remove();
+    if (document.getElementById('modal-comprador')) document.getElementById('modal-comprador').remove();
 
-            const modalHtml = `
-                <div id="modal-comprador" class="modal">
-                    <div class="modal-content">
-                        <h2 style="text-align: center; margin-top:0;">${configGlobal.loteria_nombre} 🎟️</h2>
-                        <h3 style="text-align: center; color: #0284c7; margin: 5px 0;">Reservar Boleto: #${numeroBoleto}</h3>
-                        <p style="font-size: 13px; color: #334155; text-align: center; background: #f1f5f9; padding: 10px; border-radius: 6px;">
-                            Valor del boleto: <b>${configGlobal.simbolo_moneda || '$'}${Number(configGlobal.precio_boleto).toLocaleString()} ${configGlobal.moneda}</b><br>
-                            <span style="color: #e11d48; font-weight: bold;">Tendrás 5 minutos para realizar y reportar tu pago tras registrarte.</span>
-                        </p>
-                        <form id="form-reserva">
-                            <input type="text" id="nombre" placeholder="Nombre completo" required />
-                            <input type="tel" id="telefono" placeholder="Teléfono / WhatsApp (ej: 3150000000)" required />
-                            <input type="text" id="ciudad" placeholder="Ciudad / Estado" required />
-                            <input type="email" id="email" placeholder="Correo electrónico" required />
-                            
-                            <div style="margin: 10px 0; font-size: 12px; display: flex; align-items: flex-start; gap: 8px;">
-                                <input type="checkbox" id="acepta-datos" required style="margin-top: 3px;" />
-                                <label for="acepta-datos" style="cursor: pointer; color: #334155;">
-                                    Autorizo el tratamiento de mis datos personales para gestionar esta rifa.
-                                </label>
-                            </div>
-
-                            <div class="modal-buttons">
-                                <button type="submit" class="btn-guardar">Continuar al Pago</button>
-                                <button type="button" id="btn-cancelar" class="btn-cancelar">Cancelar</button>
-                            </div>
-                        </form>
+    const modalHtml = `
+        <div id="modal-comprador" class="modal">
+            <div class="modal-content">
+                <h2 style="text-align: center; margin-top: 0;">${configGlobal.loteria_nombre}</h2>
+                <h3 style="text-align: center; color: #0284c7; margin: 5px 0;">Reservar Boleto: #${numeroBoleto}</h3>
+                <p style="font-size: 13px; color: #334155; text-align: center; background: #f1f5f9; padding: 10px; border-radius: 6px;">
+                    Valor del boleto: <b>${configGlobal.simbolo_moneda || '$'}${Number(configGlobal.precio_boleto).toLocaleString()} ${configGlobal.moneda || 'COP'}</b><br>
+                    <span style="color: #e11d48; font-weight: bold;">Tendrás 5 minutos para realizar y reportar tu pago tras registrarte.</span>
+                </p>
+                <form id="form-reserva">
+                    <input type="text" id="nombre" placeholder="Nombre completo" required />
+                    <input type="tel" id="telefono" placeholder="Teléfono / WhatsApp (ej: 3150000000)" required />
+                    <input type="text" id="ciudad" placeholder="Ciudad / Estado" required />
+                    <input type="email" id="email" placeholder="Correo electrónico" required />
+                    <div style="margin: 10px 0; font-size: 12px; display: flex; align-items: flex-start; gap: 8px;">
+                        <input type="checkbox" id="acepta-datos" required style="margin-top: 3px;" />
+                        <label for="acepta-datos" style="cursor: pointer; color: #334155;">
+                            Autorizo el tratamiento de mis datos personales para gestionar esta rifa.
+                        </label>
                     </div>
-                </div>
-            `;
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-            document.getElementById('btn-cancelar').onclick = () => document.getElementById('modal-comprador').remove();
-            
-            document.getElementById('form-reserva').onsubmit = async (e) => {
-    e.preventDefault();
-    const datos = {
-        numero: numeroBoleto,
-        nombre: document.getElementById('nombre').value,
-        telefono: document.getElementById('telefono').value,
-        ciudad: document.getElementById('ciudad').value,
-        email: document.getElementById('email').value,
-        loteria: configGlobal.loteria_nombre,
-        fechaSorteo: formatearFechaTexto(configGlobal.fecha_sorteo),
-        aceptas_datos: document.getElementById('aceptas-datos').checked
-    };
+                    <div class="modal-buttons">
+                        <button type="submit" class="btn-guardar">Continuar al Pago</button>
+                        <button type="button" id="btn-cancelar" class="btn-cancelar">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
 
-                try {
-                    const respuesta = await fetch('/api/reservar', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(datos)
-                    });
-                    const resultado = await respuesta.json();
-                    if (!respuesta.ok) throw new Error(resultado.error || "Error al reservar");
-                    
-                    document.getElementById('modal-comprador').remove();
-                    
-                    // Abrir modal con la información de pago y temporizador en vivo de 5 minutos
-                    abrirModalPagoInstrucciones(numeroBoleto, resultado.timestampReserva || Date.now());
-                    renderizarBoletos();
-                } catch (error) {
-                    alert(error.message);
-                }
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    document.getElementById('btn-cancelar').onclick = () => document.getElementById('modal-comprador').remove();
+
+    document.getElementById('form-reserva').onsubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const datos = {
+                numero: numeroBoleto,
+                nombre: document.getElementById('nombre').value,
+                telefono: document.getElementById('telefono').value,
+                ciudad: document.getElementById('ciudad').value,
+                email: document.getElementById('email').value,
+                loteria: configGlobal.loteria_nombre,
+                fechaSorteo: formatearFechaTexto(configGlobal.fecha_sorteo),
+                aceptas_datos: document.getElementById('acepta-datos').checked
             };
+
+            const respuesta = await fetch('/api/reservar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(datos)
+            });
+
+            const resultado = await respuesta.json();
+            if (!respuesta.ok) throw new Error(resultado.error || "Error al reservar");
+
+            document.getElementById('modal-comprador').remove();
+            
+            // Activa la ventana flotante de instrucciones y temporizador de 5 minutos
+            abrirModalPagoInstrucciones(numeroBoleto, resultado.timestampReserva || Date.now());
+            renderizarBoletos();
+        } catch (err) {
+            alert("Error: " + err.message);
+            console.error(err);
         }
+    };
+}
 
         function abrirModalPagoInstrucciones(numeroBoleto, timestampReserva) {
             if (document.getElementById('modal-pago-info')) document.getElementById('modal-pago-info').remove();
