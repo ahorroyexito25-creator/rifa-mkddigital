@@ -48,8 +48,7 @@ function cargarBD() {
                     nequi_numero: '3150000000',
                     bancolombia_numero: '000-00000-00',
                     pago_movil_datos: 'Banco: Mercantil | Tel: 0414-0000000 | C.I: V-12345678',
-                    whatsapp_numero: '573150000000',
-                    whatsapp_mensaje: 'Hola, deseo confirmar mi pago y reserva para el boleto #{numero} de la rifa {loteria}.',
+                    whatsapp_numero: '573150000000', // <-- Configurado por defecto
                     admin_password: '1234'
                 },
                 boletos: {},
@@ -57,13 +56,7 @@ function cargarBD() {
             };
             fs.writeFileSync(DB_FILE, JSON.stringify(initialData, null, 2), 'utf8');
         }
-        const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-        // Garantizar retrocompatibilidad si la base de datos existente no tiene los campos de WhatsApp
-        if (data.config) {
-            if (data.config.whatsapp_numero === undefined) data.config.whatsapp_numero = '573150000000';
-            if (data.config.whatsapp_mensaje === undefined) data.config.whatsapp_mensaje = 'Hola, deseo confirmar mi pago y reserva para el boleto #{numero} de la rifa {loteria}.';
-        }
-        return data;
+        return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
     } catch (error) {
         console.error('Error al cargar BD:', error);
         return {
@@ -80,7 +73,6 @@ function cargarBD() {
                 bancolombia_numero: '000-00000-00',
                 pago_movil_datos: 'Banco: Mercantil | Tel: 0414-0000000 | C.I: V-12345678',
                 whatsapp_numero: '573150000000',
-                whatsapp_mensaje: 'Hola, deseo confirmar mi pago y reserva para el boleto #{numero} de la rifa {loteria}.',
                 admin_password: '1234' 
             },
             boletos: {},
@@ -104,7 +96,7 @@ app.get('/api/config', (req, res) => {
 
 app.post('/api/config', (req, res) => {
     const db = cargarBD();
-    const { pais, moneda, simbolo_moneda, loteria_nombre, fecha_sorteo, precio_boleto, premio_mayor, nequi_numero, bancolombia_numero, pago_movil_datos, whatsapp_numero, whatsapp_mensaje } = req.body;
+    const { pais, moneda, simbolo_moneda, loteria_nombre, fecha_sorteo, precio_boleto, premio_mayor, nequi_numero, bancolombia_numero, pago_movil_datos, whatsapp_numero } = req.body;
     
     db.config.pais = pais || db.config.pais;
     db.config.moneda = moneda || db.config.moneda;
@@ -117,7 +109,6 @@ app.post('/api/config', (req, res) => {
     db.config.bancolombia_numero = bancolombia_numero !== undefined ? bancolombia_numero : db.config.bancolombia_numero;
     db.config.pago_movil_datos = pago_movil_datos !== undefined ? pago_movil_datos : db.config.pago_movil_datos;
     db.config.whatsapp_numero = whatsapp_numero !== undefined ? whatsapp_numero : db.config.whatsapp_numero;
-    db.config.whatsapp_mensaje = whatsapp_mensaje !== undefined ? whatsapp_mensaje : db.config.whatsapp_mensaje;
     
     guardarBD(db);
     res.json({ success: true });
@@ -183,63 +174,32 @@ app.post('/api/reservar', (req, res) => {
         hour12: true 
     });
 
-    const codigoAntifraude = 'RIFA-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-
     db.boletos[numero] = {
         estado: 'RESERVADO',
         nombre, telefono, ciudad, email, loteria, fechaSorteo,
         fechaCompra,
-        codigoAntifraude,
         timestampReserva: Date.now()
     };
 
     db.historial.push({
         id: db.historial.length + 1,
         numero, nombre, telefono, ciudad, email, loteria,
-        codigoAntifraude,
         fecha: new Date().toISOString()
     });
 
     guardarBD(db);
-    res.json({ success: true, codigoAntifraude });
+    res.json({ success: true });
 });
 
 app.post('/api/pagar/:numero', (req, res) => {
     const db = cargarBD();
     if (db.boletos[req.params.numero]) {
         db.boletos[req.params.numero].estado = 'PAGADO';
-        if (!db.boletos[req.params.numero].codigoAntifraude) {
-            db.boletos[req.params.numero].codigoAntifraude = 'RIFA-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-        }
         guardarBD(db);
-        res.json({ success: true, codigoAntifraude: db.boletos[req.params.numero].codigoAntifraude });
+        res.json({ success: true });
     } else {
         res.status(404).json({ success: false });
     }
-});
-
-// Endpoint integrado para generación automática de enlaces y comprobantes de WhatsApp
-app.get('/api/whatsapp/generar/:numero', (req, res) => {
-    const db = cargarBD();
-    const numeroBoleto = req.params.numero;
-    const boleto = db.boletos[numeroBoleto];
-    
-    const whatsappNum = db.config.whatsapp_numero || '573150000000';
-    
-    let mensaje = '';
-    if (boleto) {
-        mensaje = `Hola, confirmo el pago y reserva del boleto *#${numeroBoleto}* para la lotería *${db.config.loteria_nombre}*.\n` +
-                  `Nombre: ${boleto.nombre}\n` +
-                  `Teléfono: ${boleto.telefono}\n` +
-                  `Estado: ${boleto.estado}\n` +
-                  `Código Antifraude: ${boleto.codigoAntifraude || 'N/A'}\n` +
-                  `Adjunto mi comprobante de pago.`;
-    } else {
-        mensaje = `Hola, deseo consultar sobre los boletos disponibles para la rifa ${db.config.loteria_nombre}.`;
-    }
-    
-    const urlWhatsApp = `https://wa.me/${whatsappNum}?text=${encodeURIComponent(mensaje)}`;
-    res.json({ success: true, url: urlWhatsApp });
 });
 
 const PORT = process.env.PORT || 8080;
