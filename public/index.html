@@ -70,7 +70,6 @@
             box-sizing: border-box;
         }
 
-        /* Sección Embudo de Conversión (Pasos) */
         .seccion-embudo {
             background: #ffffff;
             max-width: 900px;
@@ -159,7 +158,6 @@
         .btn-guardar { background-color: #0284c7; color: white; padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; }
         .btn-cancelar { background-color: #e11d48; color: white; padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
         
-        /* Descargo legal footer */
         .descargo-legal-box {
             max-width: 900px;
             margin: 0 auto 20px auto;
@@ -202,7 +200,6 @@
         </div>
     </div>
 
-    <!-- Sección Embudo / Landing Orientada a WhatsApp -->
     <div class="seccion-embudo">
         <div class="paso-embudo">
             <h4>1. Selecciona tu número</h4>
@@ -220,7 +217,6 @@
 
     <div id="grid-boletos"></div>
 
-    <!-- Descargo de Responsabilidad Legal -->
     <div class="descargo-legal-box" id="textoDescargoLegal">
         <strong>Descargo de responsabilidad:</strong> Plataforma de gestión recreativa y de entretenimiento con fines demostrativos.
     </div>
@@ -503,12 +499,21 @@
                     const estadoBoletos = await resBoletos.json();
                     const boletoInfo = estadoBoletos[numero] || {};
                     
+                    const nombreCliente = boletoInfo.nombre || 'Cliente';
                     const telefonoCliente = boletoInfo.telefono || '';
+                    const fechaCompra = boletoInfo.fechaCompra || new Date().toLocaleString('es-ES', { 
+                        timeZone: 'America/Bogota',
+                        day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true 
+                    });
+                    const fechaSorteoFormateada = formatearFechaTexto(configGlobal.fecha_sorteo);
+                    const valorTicket = `${configGlobal.simbolo_moneda || '$'}${Number(configGlobal.precio_boleto).toLocaleString()} ${configGlobal.moneda}`;
                     const codigoSeguridad = 'MKD-' + Math.random().toString(36).substring(2, 8).toUpperCase() + '-' + numero;
-                    const mensaje = `COMPROBANTE OFICIAL DE RIFA\n\n¡Hola ${boletoInfo.nombre}! Tu pago del boleto *#${numero}* ha sido confirmado.\n\n- Lotería: ${configGlobal.loteria_nombre}\n- Sorteo: ${formatearFechaTexto(configGlobal.fecha_sorteo)}\n- Código Antifraude: ${codigoSeguridad}\n\n¡Muchísima suerte!`;
+
+                    const mensaje = `COMPROBANTE OFICIAL DE RIFA\n\n¡Hola ${nombreCliente}! Tu pago del boleto *#${numero}* ha sido confirmado.\n\n[+] Detalles de tu Ticket:\n - Fecha de compra: ${fechaCompra}\n - Lotería: ${configGlobal.loteria_nombre}\n - Fecha y hora del sorteo: ${fechaSorteoFormateada}\n - Valor del ticket: ${valorTicket}\n - Premio mayor: ${configGlobal.premio_mayor}\n - Código Antifraude: ${codigoSeguridad}\n\n¡Muchísima suerte!`;
                     
                     if (telefonoCliente) {
-                        window.open(`https://wa.me/${telefonoLimpiado = telefonoCliente.replace(/\D/g, '')}?text=${encodeURIComponent(mensaje)}`, '_blank');
+                        const telefonoLimpiado = telefonoCliente.replace(/\D/g, '');
+                        window.open(`https://wa.me/${telefonoLimpiado}?text=${encodeURIComponent(mensaje)}`, '_blank');
                     }
                     cargarReservadosAdmin();
                     renderizarBoletos();
