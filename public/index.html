@@ -596,7 +596,32 @@
                                 <input type="password" id="nuevaPassword" placeholder="Nueva contraseña" />
                                 <button type="button" class="btn-guardar" onclick="actualizarPassword()" style="margin-top: 3px;">Actualizar Clave</button>
                             </div>
+                            <!-- Sección de Configuración de Temporizador -->
+<div class="admin-card">
+    <h3>Configurar Tiempo de Reserva</h3>
+    <label>Horas de expiración:</label>
+    <input type="number" id="inputHorasTemporizador" placeholder="Ej: 24">
+    <button onclick="guardarTemporizador()">Guardar Tiempo</button>
+</div>
 
+<!-- Sección de Lista de Clientes y CRM WhatsApp -->
+<div class="admin-card">
+    <h3>Gestión de Clientes y Números Apartados</h3>
+    <table id="tablaClientesAdmin">
+        <thead>
+            <tr>
+                <th>Número</th>
+                <th>Nombre</th>
+                <th>Teléfono</th>
+                <th>Estado</th>
+                <th>Acciones (Aprobar / Liberar / WhatsApp)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Los datos se cargan dinámicamente con JS -->
+        </tbody>
+    </table>
+</div>
                             <div class="modal-buttons" style="margin-top: 12px;">
                                 <button type="button" class="btn-cancelar" onclick="document.getElementById('modalAdmin').remove()">Salir</button>
                             </div>
@@ -818,7 +843,81 @@
                 alert('Error de conexión con el servidor.');
             }
         }
+       // Cargar la configuración actual del temporizador al abrir el panel
+async function cargarConfiguracion() {
+    try {
+        const respuesta = await fetch(`${CONFIG.urlAppRifa}/api/config`);
+        const datos = await respuesta.json();
+        const configHoras = datos.find(item => item.clave === 'tiempo_expiracion_horas');
+        if (configHoras) {
+            document.getElementById('inputHorasTemporizador').value = configHoras.valor;
+        }
+    } catch (error) {
+        console.error("Error al cargar configuración:", error);
+    }
+}
 
+// Guardar nuevo tiempo de temporizador desde el panel
+async function guardarTemporizador() {
+    const horas = document.getElementById('inputHorasTemporizador').value;
+    try {
+        const respuesta = await fetch(`${CONFIG.urlAppRifa}/api/config`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ horas })
+        });
+        const resultado = await respuesta.json();
+        alert(resultado.mensaje);
+    } catch (error) {
+        alert("Error al guardar el temporizador");
+    }
+}
+
+// Función para enviar mensaje de WhatsApp de cobro (No pagado)
+function enviarAlertaCobro(telefono, numero) {
+    const mensaje = `Hola, te recordamos que tienes reservado el número *#${numero}* para la rifa de Chontico Noche. Por favor realiza el pago para confirmar tu participación. ¡Gracias!`;
+    const url = `https://api.whatsapp.com/send?phone=507${telefono}&text=${encodeURIComponent(mensaje)}`; // Ajusta el indicativo de tu país si es necesario
+    window.open(url, '_blank');
+}
+
+// Función exacta solicitada para notificar al ganador por WhatsApp
+function notificarGanadorWhatsApp(telefono, numero, nombre) {
+    const fechaHoy = "5 de septiembre del 2026"; // O puedes usar una variable de fecha dinámica si lo prefieres
+    const mensaje = `¡Hola ${nombre}, ha sido usted el feliz ganador de la rifa de chontico noche de hoy ${fechaHoy} de las 10:00 pm !felicidades¡`;
+    const url = `https://api.whatsapp.com/send?phone=${telefono}&text=${encodeURIComponent(mensaje)}`;
+    window.open(url, '_blank');
+}
+
+// Botón de liberación inmediata desde el panel (ubicado junto al aprobar)
+async function liberarTicketInmediato(numero) {
+    if (!confirm(`¿Estás seguro de liberar inmediatamente el ticket #${numero}?`)) return;
+    try {
+        const respuesta = await fetch(`${CONFIG.urlAppRifa}/api/liberar-ticket`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ numero })
+        });
+        const resultado = await respuesta.json();
+        alert(resultado.mensaje);
+        location.reload(); // Recarga para actualizar la tabla
+    } catch (error) {
+        alert("Error al liberar el ticket");
+    }
+}
+
+// Al dar clic en ganador (ejecuta registro en base de datos y abre WhatsApp)
+async function declararGanador(numero, nombre, telefono) {
+    try {
+        await fetch(`${CONFIG.urlAppRifa}/api/registrar-ganador`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ numero, nombre, telefono })
+        });
+        notificarGanadorWhatsApp(telefono, numero, nombre);
+    } catch (error) {
+        alert("Error al registrar el ganador en el historial");
+    }
+}
         window.onload = async () => {
             mostrarFechaHoyDinamica();
             await cargarConfiguracion();
