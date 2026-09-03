@@ -929,9 +929,47 @@ async function declararGanador(numero, nombre, telefono) {
         alert("Error al registrar el ganador en el historial");
     }
 }
+        // Función para cargar los datos principales en la pantalla (Premio, Sorteo y Valor)
+async function cargarDatosGeneralesRifa() {
+    try {
+        const respuesta = await fetch(`${URL_SERVIDOR}/api/config`);
+        const datos = await respuesta.json();
+        
+        // Convertimos los datos a un formato fácil de leer si vienen en lista u objeto
+        let configObj = {};
+        if (Array.isArray(datos)) {
+            datos.forEach(item => { configObj[item.clave] = item.valor; });
+        } else if (datos && typeof datos === 'object') {
+            configObj = datos;
+        }
+
+        // Buscamos los elementos en la pantalla y les ponemos la información real
+        // Si no existen en la base de datos todavía, ponemos un texto predeterminado para que no se quede en "Cargando"
+        const elemPremio = document.querySelector('.fa-trophy')?.parentNode || document.getElementById('premioMayor');
+        const elemSorteo = document.querySelector('.fa-calendar-alt')?.parentNode || document.getElementById('fechaSorteo');
+        const elemValor  = document.querySelector('.fa-money-bill-wave')?.parentNode || document.getElementById('valorBoleto');
+
+        // Actualizamos los textos de forma segura
+        document.querySelectorAll('div, span, p').forEach(el => {
+            if (el.textContent.includes('Premio Mayor: Cargando')) {
+                el.innerHTML = `<i class="fas fa-trophy"></i> Premio Mayor: ${configObj.premio_mayor || "Moto 0KM / Efectivo"}`;
+            }
+            if (el.textContent.includes('Sorteo: Cargando')) {
+                el.innerHTML = `<i class="fas fa-calendar-alt"></i> Sorteo: ${configObj.fecha_sorteo || "Jueves 3 de Septiembre 2026 - 10:00 PM"}`;
+            }
+            if (el.textContent.includes('Valor Boleto: Cargando')) {
+                el.innerHTML = `<i class="fas fa-ticket-alt"></i> Valor Boleto: $${configObj.valor_boleto || "10.000"}`;
+            }
+        });
+
+    } catch (error) {
+        console.error("Error al cargar los datos generales:", error);
+    }
+}
         window.onload = async () => {
             mostrarFechaHoyDinamica();
             await cargarConfiguracion();
+            await cargarDatosGeneralesRifa();
             await renderizarBoletos();
         };
     </script>
