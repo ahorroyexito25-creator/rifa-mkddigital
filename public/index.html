@@ -300,7 +300,7 @@
 
         // Actualizamos de forma segura los elementos fijos
         if (document.getElementById('miTituloLoteria')) {
-            document.getElementById('miTituloLoteriainnerHTML = `<span style="color: #f59e0b;">GRAN RIFA</span> ${configObj.loteria_nombre || 'Chontico Noche'}`;
+            document.getElementById('miTituloLoteria').innerHTML = `<span style="color: #f59e0b;">GRAN RIFA</span> ${configObj.loteria_nombre || 'Chontico Noche'}`;
         }
         if (document.getElementById('miPremioHeader')) {
             document.getElementById('miPremioHeader').textContent = configObj.premio_mayor || '700.000 $ COP';
