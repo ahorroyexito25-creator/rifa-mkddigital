@@ -843,10 +843,13 @@
                 alert('Error de conexión con el servidor.');
             }
         }
-       // Cargar la configuración actual del temporizador al abrir el panel
+// Dirección fija del servidor para evitar errores de lectura
+const URL_SERVIDOR = "https://rifa-mkddigital.onrender.com";
+
+// Cargar la configuración actual del temporizador al abrir el panel
 async function cargarConfiguracion() {
     try {
-        const respuesta = await fetch(`${configGlobal.urlAppRifa}/api/config`);
+        const respuesta = await fetch(`${URL_SERVIDOR}/api/config`);
         const datos = await respuesta.json();
         const configHoras = datos.find(item => item.clave === 'tiempo_expiracion_horas');
         if (configHoras) {
@@ -861,7 +864,7 @@ async function cargarConfiguracion() {
 async function guardarTemporizador() {
     const horas = document.getElementById('inputHorasTemporizador').value;
     try {
-        const respuesta = await fetch(`${configGlobal.urlAppRifa}/api/config`, {
+        const respuesta = await fetch(`${URL_SERVIDOR}/api/config`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ horas })
@@ -876,30 +879,30 @@ async function guardarTemporizador() {
 // Función para enviar mensaje de WhatsApp de cobro (No pagado)
 function enviarAlertaCobro(telefono, numero) {
     const mensaje = `Hola, te recordamos que tienes reservado el número *#${numero}* para la rifa de Chontico Noche. Por favor realiza el pago para confirmar tu participación. ¡Gracias!`;
-    const url = `https://api.whatsapp.com/send?phone=507${telefono}&text=${encodeURIComponent(mensaje)}`; // Ajusta el indicativo de tu país si es necesario
+    const url = `https://api.whatsapp.com/send?phone=507${telefono}&text=${encodeURIComponent(mensaje)}`;
     window.open(url, '_blank');
 }
 
 // Función exacta solicitada para notificar al ganador por WhatsApp
 function notificarGanadorWhatsApp(telefono, numero, nombre) {
-    const fechaHoy = "5 de septiembre del 2026"; // O puedes usar una variable de fecha dinámica si lo prefieres
+    const fechaHoy = "5 de septiembre del 2026";
     const mensaje = `¡Hola ${nombre}, ha sido usted el feliz ganador de la rifa de chontico noche de hoy ${fechaHoy} de las 10:00 pm !felicidades¡`;
     const url = `https://api.whatsapp.com/send?phone=${telefono}&text=${encodeURIComponent(mensaje)}`;
     window.open(url, '_blank');
 }
 
-// Botón de liberación inmediata desde el panel (ubicado junto al aprobar)
+// Botón de liberación inmediata desde el panel
 async function liberarTicketInmediato(numero) {
     if (!confirm(`¿Estás seguro de liberar inmediatamente el ticket #${numero}?`)) return;
     try {
-        const respuesta = await fetch(`${configGlobal.urlAppRifa}/api/liberar-ticket`, {
+        const respuesta = await fetch(`${URL_SERVIDOR}/api/liberar-ticket`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ numero })
         });
         const resultado = await respuesta.json();
         alert(resultado.mensaje);
-        location.reload(); // Recarga para actualizar la tabla
+        location.reload();
     } catch (error) {
         alert("Error al liberar el ticket");
     }
@@ -908,7 +911,7 @@ async function liberarTicketInmediato(numero) {
 // Al dar clic en ganador (ejecuta registro en base de datos y abre WhatsApp)
 async function declararGanador(numero, nombre, telefono) {
     try {
-        await fetch(`${configGlobal.urlAppRifa}/api/registrar-ganador`, {
+        await fetch(`${URL_SERVIDOR}/api/registrar-ganador`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ numero, nombre, telefono })
