@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Rifas y Sorteos</title>
+    <title>Sistema de Rifas y Sorteos - API Rifa</title>
     <style>
         :root {
             --primary: #059669;
@@ -68,6 +68,7 @@
             cursor: pointer;
             font-weight: bold;
             font-size: 14px;
+            transition: background 0.2s;
         }
 
         .btn-admin:hover {
@@ -111,7 +112,7 @@
             font-weight: bold;
             cursor: pointer;
             font-size: 14px;
-            transition: transform 0.1s;
+            transition: transform 0.1s, background-color 0.2s;
         }
 
         .boleto:hover {
@@ -158,7 +159,7 @@
             padding: 25px;
             border-radius: 10px;
             width: 100%;
-            max-width: 450px;
+            max-width: 480px;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
             box-sizing: border-box;
             max-height: 90vh;
@@ -170,6 +171,7 @@
             margin-top: 10px;
             font-size: 12px;
             font-weight: bold;
+            color: #334155;
         }
 
         .modal-content input, .modal-content select, .modal-content textarea {
@@ -197,6 +199,7 @@
             font-weight: bold;
             cursor: pointer;
             flex: 1;
+            transition: background 0.2s;
         }
 
         .btn-guardar:hover {
@@ -212,6 +215,7 @@
             font-weight: bold;
             cursor: pointer;
             flex: 1;
+            transition: background 0.2s;
         }
 
         .btn-cancelar:hover {
@@ -225,6 +229,15 @@
             color: white;
             font-size: 13px;
             margin-top: auto;
+        }
+
+        .qr-preview {
+            max-width: 100px;
+            max-height: 100px;
+            margin-top: 5px;
+            display: block;
+            border-radius: 4px;
+            border: 1px solid #cbd5e1;
         }
     </style>
 </head>
@@ -254,7 +267,7 @@
 
         <div class="board-container">
             <h3 style="margin-top:0;">Selecciona tu número de la suerte</h3>
-            <div style="display: flex; gap: 15px; font-size: 12px; margin-bottom: 10px;">
+            <div style="display: flex; gap: 15px; font-size: 12px; margin-bottom: 10px; flex-wrap: wrap;">
                 <span style="display:flex; align-items:center; gap:4px;"><span style="width:12px; height:12px; background:#d1fae5; border:1px solid #34d399; display:inline-block; border-radius:2px;"></span> Disponible</span>
                 <span style="display:flex; align-items:center; gap:4px;"><span style="width:12px; height:12px; background:#fef3c7; border:1px solid #fbbf24; display:inline-block; border-radius:2px;"></span> Reservado</span>
                 <span style="display:flex; align-items:center; gap:4px;"><span style="width:12px; height:12px; background:#fee2e2; border:1px solid #f87171; display:inline-block; border-radius:2px;"></span> Vendido / Pagado</span>
@@ -346,20 +359,21 @@
         function clikBoleto(numero) {
             const boletoInfo = boletosGlobal[numero] || { estado: 'DISPONIBLE' };
             if (boletoInfo.estado === 'PAGADO') {
-                alert(`El boleto #${numero} ya se encuentra vendido.`);
+                alert(`El boleto #${numero} ya se encuentra vendido y asignado.`);
                 return;
             }
             if (boletoInfo.estado === 'RESERVADO') {
-                alert(`El boleto #${numero} está reservado temporalmente.`);
+                alert(`El boleto #${numero} se encuentra actualmente reservado a la espera de confirmación de pago.`);
                 return;
             }
-            
-            // Abrir modal de compra/reserva para número disponible
             abrirModalReserva(numero);
         }
 
         function abrirModalReserva(numero) {
             if (document.getElementById('modalReserva')) document.getElementById('modalReserva').remove();
+
+            let qrNequiHtml = configGlobal.nequi_qr ? `<div style="text-align:center; margin-top:8px;"><p style="margin:0; font-size:11px;">QR Nequi:</p><img src="${configGlobal.nequi_qr}" class="qr-preview" style="margin:0 auto;" /></div>` : '';
+            let qrBancolombiaHtml = configGlobal.bancolombia_qr ? `<div style="text-align:center; margin-top:8px;"><p style="margin:0; font-size:11px;">QR Bancolombia:</p><img src="${configGlobal.bancolombia_qr}" class="qr-preview" style="margin:0 auto;" /></div>` : '';
 
             const modalHtml = `
                 <div id="modalReserva" class="modal">
@@ -372,14 +386,18 @@
                             <label>Número de Teléfono / WhatsApp:</label>
                             <input type="text" id="telefonoComprador" required placeholder="Ej: 3150000000">
                             
-                            <div style="background:#f1f5f9; padding:10px; border-radius:6px; margin-top:10px; font-size:13px;">
+                            <div style="background:#f1f5f9; padding:12px; border-radius:6px; margin-top:10px; font-size:13px;">
                                 <p style="margin:0 0 5px 0; font-weight:bold;">Instrucciones de Pago:</p>
-                                <p style="margin:0;">Paga <b>${configGlobal.simbolo_moneda || '$'}${Number(configGlobal.precio_boleto).toLocaleString()} ${configGlobal.moneda}</b> a través de nuestros medios autorizados y sube tu comprobante.</p>
-                                <p style="margin:5px 0 0 0;">Nequi: <b>${configGlobal.nequi_numero || 'No configurado'}</b></p>
+                                <p style="margin:0;">Paga <b>${configGlobal.simbolo_moneda || '$'}${Number(configGlobal.precio_boleto).toLocaleString()} ${configGlobal.moneda}</b> a través de los canales autorizados:</p>
+                                ${configGlobal.nequi_numero ? `<p style="margin:5px 0 0 0;">Nequi: <b>${configGlobal.nequi_numero}</b></p>` : ''}
+                                ${configGlobal.bancolombia_numero ? `<p style="margin:3px 0 0 0;">Bancolombia: <b>${configGlobal.bancolombia_numero}</b></p>` : ''}
+                                ${configGlobal.pago_movil_datos ? `<p style="margin:3px 0 0 0;">Pago Móvil / Otros: <b>${configGlobal.pago_movil_datos}</b></p>` : ''}
+                                ${qrNequiHtml}
+                                ${qrBancolombiaHtml}
                             </div>
 
                             <div class="modal-buttons">
-                                <button type="submit" class="btn-guardar">Reservar y Pagar</button>
+                                <button type="submit" class="btn-guardar">Confirmar Reserva</button>
                                 <button type="button" class="btn-cancelar" onclick="document.getElementById('modalReserva').remove()">Cancelar</button>
                             </div>
                         </form>
@@ -402,14 +420,14 @@
                 });
                 const data = await res.json();
                 if (data.success) {
-                    alert(`¡Boleto #${numero} reservado con éxito! Por favor completa tu pago.`);
+                    alert(`¡Boleto #${numero} reservado con éxito! Envía tu comprobante de pago para validarlo.`);
                     document.getElementById('modalReserva').remove();
                     await renderizarBoletos();
                 } else {
                     alert(data.error || 'No se pudo completar la reserva.');
                 }
             } catch (err) {
-                alert('Error de conexión al procesar reserva.');
+                alert('Error de conexión al procesar la reserva.');
             }
         }
 
@@ -418,11 +436,11 @@
 
             const modalAdminHtml = `
                 <div id="modalAdmin" class="modal">
-                    <div class="modal-content" style="max-width: 480px;">
+                    <div class="modal-content" style="max-width: 520px;">
                         <h3 style="text-align:center; color:#1e293b; margin-top:0;">Panel de Administración ⚙️</h3>
                         
                         <div id="divLogin">
-                            <p style="font-size:13px;">Ingrese contraseña de acceso:</p>
+                            <p style="font-size:13px;">Ingrese la contraseña de acceso administrador:</p>
                             <div style="position: relative; display: flex; align-items: center; margin: 8px 0;">
                                 <input type="password" id="inputPassword" placeholder="Contraseña" style="width: 100%; padding-right: 35px; margin: 0;" />
                                 <span onclick="togglePassword()" id="iconoOjo" style="position: absolute; right: 10px; cursor: pointer; user-select: none; font-size: 16px;">👁️</span>
@@ -441,59 +459,59 @@
                                 <option value="venezuela_usd">Venezuela (Dólares USD - Divisas)</option>
                             </select>
 
-                            <h4 style="color: #333; margin: 10px 0 5px 0;">⚙️ Configuración General</h4>
-                            <label style="font-size:11px; font-weight:bold;">Nombre Lotería:</label>
+                            <h4 style="color: #333; margin: 12px 0 5px 0;">⚙️ Configuración General</h4>
+                            <label>Nombre de la Lotería o Sorteo:</label>
                             <input type="text" id="adminLoteria" value="${configGlobal.loteria_nombre}" />
                             
-                            <label style="font-size:11px; font-weight:bold;">Premio Mayor:</label>
+                            <label>Premio Mayor:</label>
                             <input type="text" id="adminPremio" value="${configGlobal.premio_mayor}" />
 
-                            <label style="font-size:11px; font-weight:bold;">Fecha y Hora del Sorteo:</label>
+                            <label>Fecha y Hora del Sorteo:</label>
                             <input type="datetime-local" id="adminFechaSorteo" value="${configGlobal.fecha_sorteo || ''}" />
 
-                            <label style="font-size:11px; font-weight:bold;">Precio del Boleto:</label>
+                            <label>Precio por Boleto:</label>
                             <input type="number" id="adminPrecio" value="${configGlobal.precio_boleto}" />
 
-                            <label style="font-size:11px; font-weight:bold;">Símbolo Moneda ($ / Bs):</label>
+                            <label>Símbolo Moneda ($ / Bs):</label>
                             <input type="text" id="adminSimbolo" value="${configGlobal.simbolo_moneda}" />
 
-                            <label style="font-size:11px; font-weight:bold;">Código Moneda (COP / VES / USD):</label>
+                            <label>Código Moneda (COP / VES / USD):</label>
                             <input type="text" id="adminMoneda" value="${configGlobal.moneda}" />
 
-                            <label style="font-size:11px; font-weight:bold;">Número de WhatsApp (Soporte / Botón flotante):</label>
+                            <label>Número de WhatsApp (Soporte / Botón flotante):</label>
                             <input type="text" id="adminWhatsapp" value="${configGlobal.whatsapp_numero}" placeholder="Ej: 573150000000" />
 
-                            <h4 style="color: #333; margin: 10px 0 5px 0;">💳 Datos y QRs de Pago</h4>
+                            <h4 style="color: #333; margin: 15px 0 5px 0;">💳 Datos y QRs de Pago</h4>
                             
-                            <label style="font-size:11px; font-weight:bold;">Número Nequi:</label>
-                            <input type="text" id="adminNequi" value="${configGlobal.nequi_numero}" />
-                            <label style="font-size:11px; font-weight:bold;">Imagen QR Nequi (Subir foto):</label>
+                            <label>Número Nequi:</label>
+                            <input type="text" id="adminNequi" value="${configGlobal.nequi_numero || ''}" />
+                            <label>Imagen QR Nequi (Subir foto):</label>
                             <input type="file" id="fileNequiQr" accept="image/*" onchange="convertirQR('nequi')" />
                             <input type="hidden" id="adminNequiQr" value="${configGlobal.nequi_qr || ''}" />
 
-                            <label style="font-size:11px; font-weight:bold;">Número Bancolombia:</label>
+                            <label>Número Bancolombia:</label>
                             <input type="text" id="adminBancolombia" value="${configGlobal.bancolombia_numero || ''}" />
-                            <label style="font-size:11px; font-weight:bold;">Imagen QR Bancolombia (Subir foto):</label>
+                            <label>Imagen QR Bancolombia (Subir foto):</label>
                             <input type="file" id="fileBancolombiaQr" accept="image/*" onchange="convertirQR('bancolombia')" />
                             <input type="hidden" id="adminBancolombiaQr" value="${configGlobal.bancolombia_qr || ''}" />
 
-                            <label style="font-size:11px; font-weight:bold;">Datos Pago Móvil / Otros (Texto):</label>
+                            <label>Datos Pago Móvil / Otros (Texto):</label>
                             <textarea id="adminPagoMovil" rows="2">${configGlobal.pago_movil_datos || ''}</textarea>
 
-                            <button type="button" class="btn-guardar" onclick="guardarConfiguracionAdmin()" style="margin-top: 10px;">Guardar Cambios</button>
-                            <button type="button" class="btn-cancelar" onclick="reiniciarSorteoTablero()" style="margin-top: 10px; width: 100%; background: #dc2626; color: white; padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">🔄 Iniciar Nuevo Sorteo (Poner todo en verde)</button>
+                            <button type="button" class="btn-guardar" onclick="guardarConfiguracionAdmin()" style="margin-top: 15px;">Guardar Cambios</button>
+                            <button type="button" class="btn-cancelar" onclick="reiniciarSorteoTablero()" style="margin-top: 10px; width: 100%; background: #dc2626; color: white; padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">🔄 Iniciar Nuevo Sorteo (Liberar todos los boletos)</button>
                             
-                            <h4 style="color: #333; margin: 15px 0 5px 0;">🎟️ Reservas Pendientes</h4>
-                            <div id="listaReservados" style="max-height: 120px; overflow-y: auto; font-size: 12px; border: 1px solid #cbd5e1; padding: 6px; border-radius: 6px;">Cargando...</div>
+                            <h4 style="color: #333; margin: 15px 0 5px 0;">🎟️ Reservas Pendientes de Pago</h4>
+                            <div id="listaReservados" style="max-height: 140px; overflow-y: auto; font-size: 12px; border: 1px solid #cbd5e1; padding: 8px; border-radius: 6px; background:#fff;">Cargando...</div>
                             
-                            <div style="margin-top: 10px; border-top: 1px solid #cbd5e1; padding-top: 8px;">
-                                <h4 style="color: #333; margin-bottom: 3px;">🔑 Cambiar Clave Admin</h4>
-                                <input type="password" id="nuevaPassword" placeholder="Nueva contraseña" />
-                                <button type="button" class="btn-guardar" onclick="actualizarPassword()" style="margin-top: 3px;">Actualizar Clave</button>
+                            <div style="margin-top: 15px; border-top: 1px solid #cbd5e1; padding-top: 10px;">
+                                <h4 style="color: #333; margin-bottom: 5px;">🔑 Cambiar Clave de Administrador</h4>
+                                <input type="password" id="nuevaPassword" placeholder="Nueva contraseña de administrador" />
+                                <button type="button" class="btn-guardar" onclick="actualizarPassword()" style="margin-top: 5px;">Actualizar Clave</button>
                             </div>
 
-                            <div class="modal-buttons" style="margin-top: 12px;">
-                                <button type="button" class="btn-cancelar" onclick="document.getElementById('modalAdmin').remove()">Salir</button>
+                            <div class="modal-buttons" style="margin-top: 15px;">
+                                <button type="button" class="btn-cancelar" onclick="document.getElementById('modalAdmin').remove()">Cerrar Panel</button>
                             </div>
                         </div>
                     </div>
@@ -511,7 +529,7 @@
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     document.getElementById(hiddenId).value = e.target.result;
-                    alert(`QR de ${tipo} cargado temporalmente. Haz clic en "Guardar Cambios" para aplicarlo.`);
+                    alert(`QR de ${tipo} cargado temporalmente. Haz clic en "Guardar Cambios" para aplicarlo de forma definitiva.`);
                 };
                 reader.readAsDataURL(file);
             }
@@ -569,7 +587,7 @@
                     alert('Contraseña incorrecta');
                 }
             } catch (e) {
-                alert('Error al verificar credenciales.');
+                alert('Error al verificar credenciales con el servidor.');
             }
         }
 
@@ -602,7 +620,7 @@
                     await cargarConfiguracion();
                     document.getElementById('modalAdmin').remove();
                 } else {
-                    alert('Error al guardar configuración.');
+                    alert('Error al guardar la configuración en el servidor.');
                 }
             } catch (e) {
                 alert('Error de conexión con el servidor.');
@@ -623,7 +641,7 @@
                 });
                 const data = await res.json();
                 if (data.success) {
-                    alert("¡Contraseña actualizada con éxito!");
+                    alert("¡Contraseña de administrador actualizada con éxito!");
                     document.getElementById('nuevaPassword').value = "";
                 } else {
                     alert(data.error || "No se pudo actualizar la contraseña.");
@@ -635,7 +653,7 @@
 
         async function cargarReservadosAdmin() {
             const contenedor = document.getElementById('listaReservados');
-            contenedor.innerHTML = 'Cargando...';
+            contenedor.innerHTML = 'Cargando reservas...';
             try {
                 const res = await fetch('/api/boletos', { cache: 'no-store' });
                 const dataBoletos = await res.json();
@@ -643,20 +661,20 @@
                 let html = '';
                 for (const [id, boleto] of Object.entries(dataBoletos)) {
                     if (typeof boleto === 'object' && boleto !== null && boleto.estado === 'RESERVADO') {
-                        html += `<div style="padding: 4px 0; border-bottom: 1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
-                            <span><b>#${id}</b> - ${boleto.nombre || 'Reservado'}</span>
-                            <button onclick="aprobarPagoAdmin('${id}')" style="background:#059669; color:#fff; border:none; padding:3px 6px; border-radius:4px; cursor:pointer; font-size:11px;">Aprobar</button>
+                        html += `<div style="padding: 6px 0; border-bottom: 1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+                            <span><b>#${id}</b> - ${boleto.nombre || 'Reservado'} (${boleto.telefono || 'Sin tel'})</span>
+                            <button onclick="aprobarPagoAdmin('${id}')" style="background:#059669; color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px; font-weight:bold;">Aprobar Pago</button>
                         </div>`;
                     }
                 }
-                contenedor.innerHTML = html || '<p>No hay reservas activas.</p>';
+                contenedor.innerHTML = html || '<p style="margin:5px 0; color:#64748b;">No hay reservas pendientes de pago en este momento.</p>';
             } catch (error) {
-                contenedor.innerHTML = '<p style="color: red;">Error al cargar datos.</p>';
+                contenedor.innerHTML = '<p style="color: red;">Error al cargar datos de reservas.</p>';
             }
         }
         
         async function reiniciarSorteoTablero() {
-            if (!confirm("¿Estás seguro de iniciar un nuevo sorteo? Esto pondrá todos los boletos nuevamente en verde (disponibles) para la venta.")) {
+            if (!confirm("¿Estás seguro de iniciar un nuevo sorteo? Esto pondrá todos los boletos nuevamente en estado disponible (verde) para la venta.")) {
                 return;
             }
             try {
@@ -673,7 +691,7 @@
                 }
             } catch (e) {
                 console.error(e);
-                alert("Error de conexión al reiniciar.");
+                alert("Error de conexión al reiniciar el sorteo.");
             }
         }
         
@@ -683,7 +701,7 @@
                 const data = await res.json();
                 
                 if (data.success) {
-                    alert(`¡Boleto #${numero} aprobado exitosamente!`);
+                    alert(`¡Boleto #${numero} aprobado y marcado como vendido exitosamente!`);
                     
                     const resBoletos = await fetch('/api/boletos');
                     const estadoBoletos = await resBoletos.json();
@@ -696,7 +714,7 @@
                     const valorTicket = `${configGlobal.simbolo_moneda || '$'}${Number(configGlobal.precio_boleto).toLocaleString()} ${configGlobal.moneda}`;
                     const codigoSeguridad = 'MKD-' + Math.random().toString(36).substring(2, 8).toUpperCase() + '-' + numero;
 
-                    const mensaje = `============================\n COMPROBANTE OFICIAL DE RIFA    \n============================\n\n¡Hola ${nombreCliente}! Tu pago del boleto *#${numero}* ha sido confirmado.\n\n[+] Detalles de tu Ticket:\n - Fecha de compra: ${fechaCompra}\n - Lotería: ${configGlobal.loteria_nombre}\n - Fecha y hora del sorteo: ${fechaSorteoFormateada}\n - Valor del ticket: ${valorTicket}\n - Premio mayor: ${configGlobal.premio_mayor}\n - Código Antifraude: ${codigoSeguridad}\n\n¡Muchísima suerte!`;
+                    const mensaje = `============================\n COMPROBANTE OFICIAL DE RIFA    \n============================\n\n¡Hola ${nombreCliente}! Tu pago del boleto *#${numero}* ha sido verificado y confirmado.\n\n[+] Detalles de tu Ticket:\n - Fecha de emisión: ${fechaCompra}\n - Lotería / Sorteo: ${configGlobal.loteria_nombre}\n - Fecha y hora del sorteo: ${fechaSorteoFormateada}\n - Valor del ticket: ${valorTicket}\n - Premio mayor: ${configGlobal.premio_mayor}\n - Código Antifraude: ${codigoSeguridad}\n\n¡Muchísima suerte en el sorteo!`;
                     
                     if (telefonoCliente) {
                         const telefonoLimpiado = telefonoCliente.replace(/\D/g, '');
@@ -706,7 +724,7 @@
                     cargarReservadosAdmin();
                     renderizarBoletos();
                 } else {
-                    alert('No se pudo aprobar el pago.');
+                    alert('No se pudo aprobar el pago en el servidor.');
                 }
             } catch (e) {
                 alert('Error de conexión con el servidor.');
