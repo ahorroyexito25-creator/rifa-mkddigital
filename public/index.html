@@ -290,12 +290,33 @@
             }
         }
 
-       async function cargarConfiguracion() {
+      async function cargarConfiguracion() {
+    // 1. Mostramos los datos de inmediato usando configGlobal para que nunca parpadee ni se borre
+    if (typeof configGlobal !== 'undefined') {
+        const tituloEl = document.getElementById('tituloLoteria');
+        if (tituloEl) tituloEl.innerHTML = `<span style="color: #f59e0b;">GRAN RIFA</span> ${configGlobal.loteria_nombre || 'Chontico Noche'}`;
+
+        const premioEl = document.getElementById('premioHeader');
+        if (premioEl) premioEl.innerHTML = `🏆 Premio Mayor: ${configGlobal.premio_mayor || '700.000 $ COP'}`;
+
+        const fechaEl = document.getElementById('fechaSorteoHeader');
+        if (fechaEl) {
+            const fechaTxt = configGlobal.fecha_sorteo ? formatearFechaTexto(configGlobal.fecha_sorteo) : 'Por definir';
+            fechaEl.innerHTML = `📅 Sorteo: ${fechaTxt}`;
+        }
+
+        const precioEl = document.getElementById('precioBoletoHeader');
+        if (precioEl) {
+            const precioVal = configGlobal.precio_boleto || '10000';
+            precioEl.innerHTML = `🪙 Valor Boleto: $${precioVal}`;
+        }
+    }
+
+    // 2. Intentamos actualizar en segundo plano con la base de datos del servidor
     try {
         const res = await fetch('/api/config');
         const data = await res.json();
         
-        // Adaptamos los datos por si el servidor los envía como lista u objeto
         let configObj = {};
         if (Array.isArray(data)) {
             data.forEach(item => { configObj[item.clave] = item.valor; });
@@ -303,42 +324,33 @@
             configObj = data;
         }
 
-        // Guardamos en la variable global
-        configGlobal = configObj;
+        if (configObj && Object.keys(configObj).length > 0) {
+            configGlobal = { ...configGlobal, ...configObj };
+            
+            const tituloEl = document.getElementById('tituloLoteria');
+            if (tituloEl && configGlobal.loteria_nombre) {
+                tituloEl.innerHTML = `<span style="color: #f59e0b;">GRAN RIFA</span> ${configGlobal.loteria_nombre}`;
+            }
 
-        // 1. Título de la lotería
-        const tituloEl = document.getElementById('tituloLoteria');
-        if (tituloEl) {
-            const nombreLote = configObj.loteria_nombre || 'Chontico Noche';
-            tituloEl.innerHTML = `<span style="color: #f59e0b;">GRAN RIFA</span> ${nombreLote}`;
+            const premioEl = document.getElementById('premioHeader');
+            if (premioEl && configGlobal.premio_mayor) {
+                premioEl.innerHTML = `🏆 Premio Mayor: ${configGlobal.premio_mayor}`;
+            }
+
+            const fechaEl = document.getElementById('fechaSorteoHeader');
+            if (fechaEl && configGlobal.fecha_sorteo) {
+                fechaEl.innerHTML = `📅 Sorteo: ${formatearFechaTexto(configGlobal.fecha_sorteo)}`;
+            }
+
+            const precioEl = document.getElementById('precioBoletoHeader');
+            if (precioEl && configGlobal.precio_boleto) {
+                precioEl.innerHTML = `🪙 Valor Boleto: $${configGlobal.precio_boleto}`;
+            }
         }
-
-        // 2. Premio Mayor
-        const premioEl = document.getElementById('premioHeader');
-        if (premioEl) {
-            const premioVal = configObj.premio_mayor || '700.000 $ COP';
-            premioEl.innerHTML = `🏆 Premio Mayor: ${premioVal}`;
-        }
-
-        // 3. Fecha del Sorteo
-        const fechaEl = document.getElementById('fechaSorteoHeader');
-        if (fechaEl) {
-            const fechaVal = configObj.fecha_sorteo ? formatearFechaTexto(configObj.fecha_sorteo) : 'Jueves 3 de Septiembre 2026';
-            fechaEl.innerHTML = `📅 Sorteo: ${fechaVal}`;
-        }
-
-        // 4. Precio del Boleto
-        const precioEl = document.getElementById('precioBoletoHeader');
-        if (precioEl) {
-            const precioVal = configObj.precio_boleto || '10000';
-            precioEl.innerHTML = `🪙 Valor Boleto: $${precioVal}`;
-        }
-
     } catch (e) {
-        console.error("Error al cargar configuración:", e);
+        console.error("Error al sincronizar con el servidor, usando respaldo local:", e);
     }
 }
-
         async function renderizarBoletos() {
             try {
                 const res = await fetch('/api/boletos');
