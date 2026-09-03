@@ -226,15 +226,11 @@
         <h1 class="titulo-rifa" id="tituloLoteria">
             <span style="color: #f59e0b;">GRAN RIFA</span> CHONTICO NOCHE
         </h1>
-        <div class="caja-info">
-            <div id="fechaHoyHeader" style="font-size: 12px; color: #38bdf8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">📅 Hoy: Cargando...</div>
-            <div style="height: 1px; background: #475569; width: 100%;"></div>
-            <div id="premioHeader" style="font-size: 15px; font-weight: 800; color: #f59e0b;">🏆 Premio Mayor: Cargando...</div>
-            <div style="height: 1px; background: #475569; width: 100%;"></div>
-            <div id="fechaSorteoHeader" style="font-size: 13px; color: #e2e8f0; font-weight: 600;">📅 Sorteo: Cargando...</div>
-            <div style="height: 1px; background: #475569; width: 100%;"></div>
-            <div id="precioBoletoHeader" style="font-size: 14px; font-weight: 800; color: #34d399;">💰 Valor Boleto: Cargando...</div>
-        </div>
+         <div id="encabezadoFijoUnico" style="background: rgba(15, 23, 42, 0.95); border: 2px solid #3b82f6; border-radius: 12px; max-width: 650px; margin: 20px auto; padding: 15px; text-align: center; color: white; font-family: sans-serif; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+    <h2 id="miTituloLoteria" style="color: #f97316; margin: 0 0 10px 0; font-size: 22px;">GRAN RIFA CHONTICO NOCHE</h2>
+    <p style="margin: 5px 0; font-size: 15px;"><span style="color: #fbbf24;">🏆 Premio Mayor:</span> <span id="miPremioHeader">Cargando...</span></p>
+    <p style="margin: 5px 0; font-size: 15px;"><span style="color: #ef4444;">📅 Sorteo:</span> <span id="miFechaHeader">Cargando...</span></p>
+    <p style="margin: 5px 0; font-size: 15px;"><span style="color: #10b981;">🪙 Valor Boleto:</span> $<span id="miPrecioHeader">Cargando...</span></p>
     </div>
 
     <div id="grid-boletos"></div>
@@ -290,29 +286,7 @@
             }
         }
 
-      async function cargarConfiguracion() {
-    // 1. Mostramos los datos de inmediato usando configGlobal para que nunca parpadee ni se borre
-    if (typeof configGlobal !== 'undefined') {
-        const tituloEl = document.getElementById('tituloLoteria');
-        if (tituloEl) tituloEl.innerHTML = `<span style="color: #f59e0b;">GRAN RIFA</span> ${configGlobal.loteria_nombre || 'Chontico Noche'}`;
-
-        const premioEl = document.getElementById('premioHeader');
-        if (premioEl) premioEl.innerHTML = `🏆 Premio Mayor: ${configGlobal.premio_mayor || '700.000 $ COP'}`;
-
-        const fechaEl = document.getElementById('fechaSorteoHeader');
-        if (fechaEl) {
-            const fechaTxt = configGlobal.fecha_sorteo ? formatearFechaTexto(configGlobal.fecha_sorteo) : 'Por definir';
-            fechaEl.innerHTML = `📅 Sorteo: ${fechaTxt}`;
-        }
-
-        const precioEl = document.getElementById('precioBoletoHeader');
-        if (precioEl) {
-            const precioVal = configGlobal.precio_boleto || '10000';
-            precioEl.innerHTML = `🪙 Valor Boleto: $${precioVal}`;
-        }
-    }
-
-    // 2. Intentamos actualizar en segundo plano con la base de datos del servidor
+     async function cargarConfiguracion() {
     try {
         const res = await fetch('/api/config');
         const data = await res.json();
@@ -324,31 +298,21 @@
             configObj = data;
         }
 
-        if (configObj && Object.keys(configObj).length > 0) {
-            configGlobal = { ...configGlobal, ...configObj };
-            
-            const tituloEl = document.getElementById('tituloLoteria');
-            if (tituloEl && configGlobal.loteria_nombre) {
-                tituloEl.innerHTML = `<span style="color: #f59e0b;">GRAN RIFA</span> ${configGlobal.loteria_nombre}`;
-            }
-
-            const premioEl = document.getElementById('premioHeader');
-            if (premioEl && configGlobal.premio_mayor) {
-                premioEl.innerHTML = `🏆 Premio Mayor: ${configGlobal.premio_mayor}`;
-            }
-
-            const fechaEl = document.getElementById('fechaSorteoHeader');
-            if (fechaEl && configGlobal.fecha_sorteo) {
-                fechaEl.innerHTML = `📅 Sorteo: ${formatearFechaTexto(configGlobal.fecha_sorteo)}`;
-            }
-
-            const precioEl = document.getElementById('precioBoletoHeader');
-            if (precioEl && configGlobal.precio_boleto) {
-                precioEl.innerHTML = `🪙 Valor Boleto: $${configGlobal.precio_boleto}`;
-            }
+        // Actualizamos de forma segura los elementos fijos
+        if (document.getElementById('miTituloLoteria')) {
+            document.getElementById('miTituloLoteriainnerHTML = `<span style="color: #f59e0b;">GRAN RIFA</span> ${configObj.loteria_nombre || 'Chontico Noche'}`;
+        }
+        if (document.getElementById('miPremioHeader')) {
+            document.getElementById('miPremioHeader').textContent = configObj.premio_mayor || '700.000 $ COP';
+        }
+        if (document.getElementById('miFechaHeader')) {
+            document.getElementById('miFechaHeader').textContent = configObj.fecha_sorteo ? formatearFechaTexto(configObj.fecha_sorteo) : 'Jueves 3 de Septiembre 2026';
+        }
+        if (document.getElementById('miPrecioHeader')) {
+            document.getElementById('miPrecioHeader').textContent = configObj.precio_boleto || '10000';
         }
     } catch (e) {
-        console.error("Error al sincronizar con el servidor, usando respaldo local:", e);
+        console.error("Error al cargar configuración:", e);
     }
 }
         async function renderizarBoletos() {
