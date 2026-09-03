@@ -597,33 +597,6 @@
                                 <button type="button" class="btn-guardar" onclick="actualizarPassword()" style="margin-top: 3px;">Actualizar Clave</button>
                             </div>
 
-                            <!-- SECCIÓN DE CONFIGURACIÓN DEL TEMPORIZADOR -->
-<div class="admin-card">
-  <h3>Configurar Tiempo de Reserva</h3>
-  <label>Horas de vigencia del ticket:</label>
-  <input type="number" id="inputHoras" placeholder="Ej: 24 o 48">
-  <button onclick="guardarTemporizador()">Guardar Tiempo</button>
-</div>
-
-<!-- TABLA DE GESTIÓN DE CLIENTES Y NÚMEROS -->
-<div class="admin-card">
-  <h3>Lista de Números Apartados / Ocupados</h3>
-  <table id="tablaAdminClientes">
-    <thead>
-      <tr>
-        <th>Número</th>
-        <th>Cliente</th>
-        <th>Teléfono</th>
-        <th>Estado</th>
-        <th>Acciones Rápidas</th>
-      </tr>
-    </thead>
-    <tbody id="cuerpoTablaAdmin">
-      <!-- Los datos se cargan automáticamente con JavaScript -->
-    </tbody>
-  </table>
-</div>
-
                             <div class="modal-buttons" style="margin-top: 12px;">
                                 <button type="button" class="btn-cancelar" onclick="document.getElementById('modalAdmin').remove()">Salir</button>
                             </div>
@@ -845,65 +818,6 @@
                 alert('Error de conexión con el servidor.');
             }
         }
-        // Cargar configuración de horas al abrir el panel
-async function cargarConfiguracion() {
-  const respuesta = await fetch('https://rifa-mkddigital.onrender.com/api/configuracion');
-  const datos = await respuesta.json();
-  document.getElementById('inputHoras').value = datos.horas_expiracion;
-}
-
-// Guardar nuevo tiempo de reserva
-async function guardarTemporizador() {
-  const horas_expiracion = document.getElementById('inputHoras').value;
-  await fetch('https://rifa-mkddigital.onrender.com/api/configuracion', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ horas_expiracion })
-  });
-  alert('¡Temporizador actualizado con éxito!');
-}
-
-// Enviar WhatsApp de recordatorio de pago pendiente
-function enviarWhatsAppCobro(telefono, numero) {
-  const mensaje = `Hola, te recordamos que tienes el número ${numero} reservado y aún no registramos tu pago. ¡Evita que sea liberado!`;
-  window.open(`https://api.whatsapp.com/send?phone=${telefono}&text=${encodeURIComponent(mensaje)}`, '_blank');
-}
-
-// Declarar ganador, enviar WhatsApp automático, guardar en historial y resetear
-async function declararGanador(numero, nombre, telefono) {
-  const fechaSorteo = "5 de septiembre del 2026 de las 10:00 pm"; // O puedes hacerlo dinámico
-  const mensajeGanador = `¡Ha sido usted el feliz ganador de la rifa de chontico noche de hoy ${fechaSorteo} !felicidades¡`;
-  
-  // 1. Abrir WhatsApp con el mensaje de felicitaciones
-  window.open(`https://api.whatsapp.com/send?phone=${telefono}&text=${encodeURIComponent(mensajeGanador)}`, '_blank');
-
-  // 2. Enviar petición al backend para guardar en historial y limpiar la tabla para la siguiente rifa
-  const respuesta = await fetch('https://rifa-mkddigital.onrender.com/api/declarar-ganador-y-resetear', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ numero, nombre, telefono, fecha_sorteo: fechaSorteo })
-  });
-  
-  const resultado = await respuesta.json();
-  if(resultado.success) {
-    alert('¡Ganador registrado con éxito y rifa lista para un nuevo sorteo!');
-    location.reload(); // Recarga la página para ver el tablero limpio
-  }
-}
-
-// Liberar ticket de forma inmediata desde el panel
-async function liberarTicketInmediato(numero) {
-  if(!confirm(`¿Estás seguro de liberar el número ${numero}?`)) return;
-  
-  await fetch('https://rifa-mkddigital.onrender.com/api/liberar-ticket', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ numero })
-  });
-  
-  alert(`El número ${numero} ha quedado libre.`);
-  location.reload();
-}
 
         window.onload = async () => {
             mostrarFechaHoyDinamica();
