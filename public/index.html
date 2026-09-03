@@ -291,24 +291,48 @@
         }
 
         async function cargarConfiguracion() {
-            try {
-                const res = await fetch('/api/config');
-                const data = await res.json();
-                if (data && data.loteria_nombre) {
-                    configGlobal = data;
-                    document.getElementById('tituloLoteria').innerHTML = `<span style="color: #f59e0b;">GRAN RIFA</span> ${data.loteria_nombre}`;
-                    document.getElementById('premioHeader').innerHTML = `🏆 Premio Mayor: ${data.premio_mayor || '700.000 $ COP'}`;
-                    document.getElementById('precioBoletoHeader').textContent = `💰 Valor Boleto: ${data.simbolo_moneda || '$'}${Number(data.precio_boleto).toLocaleString()} ${data.moneda}`;
-                    document.getElementById('fechaSorteoHeader').innerHTML = `📅 Fecha del Sorteo: ${formatearFechaTexto(data.fecha_sorteo)}`;
-                    
-                    const wppBtn = document.getElementById('whatsappFlotanteBtn');
-                    const numWpp = (data.whatsapp_numero || '573150000000').replace(/\D/g, '');
-                    wppBtn.href = `https://wa.me/${numWpp}?text=` + encodeURIComponent(`Hola, deseo más información sobre la rifa ${data.loteria_nombre} y la disponibilidad de boletos.`);
-                }
-            } catch (e) {
-                console.error("Error al cargar configuración:", e);
-            }
+    try {
+        const res = await fetch('/api/config');
+        const data = await res.json();
+        
+        // Adaptamos los datos por si el servidor los envía como lista o como objeto directo
+        let configObj = {};
+        if (Array.isArray(data)) {
+            data.forEach(item => { configObj[item.clave] = item.valor; });
+        } else if (data && typeof data === 'object') {
+            configObj = data;
         }
+
+        // Guardamos en la variable global
+        configGlobal = configObj;
+
+        // Llenamos tus elementos HTML originales sin borrarlos
+        const tituloEl = document.getElementById('tituloLoteria');
+        if (tituloEl) {
+            tituloEl.innerHTML = `<span style="color: #f59e0b;">GRAN RIFA</span> ${configObj.loteria_nombre || 'Chontico Noche'}`;
+        }
+
+        const premioEl = document.getElementById('premioHeader');
+        if (premioEl) {
+            premioEl.innerHTML = `🏆 Premio Mayor: ${configObj.premio_mayor || '700.000 $ COP'}`;
+        }
+
+        const fechaEl = document.getElementById('fechaSorteoHeader');
+        if (fechaEl) {
+            const fechaTexto = configObj.fecha_sorteo ? formatearFechaTexto(configObj.fecha_sorteo) : 'Por definir';
+            fechaEl.innerHTML = `📅 Fecha del Sorteo: ${fechaTexto}`;
+        }
+
+        const precioEl = document.getElementById('precioBoletoHeader');
+        if (precioEl) {
+            const precioNum = Number(configObj.precio_boleto || 10000);
+            precioEl.innerHTML = `🪙 Valor Boleto: $${precioNum.toLocaleString()}`;
+        }
+
+    } catch (e) {
+        console.error("Error al cargar configuración:", e);
+    }
+}
 
         async function renderizarBoletos() {
             try {
