@@ -255,63 +255,6 @@ app.post('/api/pagar/:numero', (req, res) => {
 });
 
 const PORT = process.env.PORT || 8080;
-// ==========================================
-// NUEVAS FUNCIONES: Configuración, Liberación y Ganadores
-// ==========================================
-
-// 1. Obtener la configuración del temporizador
-app.get('/api/config', async (req, res) => {
-    try {
-        const { data, error } = await supabase.from('config_rifa').select('*');
-        if (error) throw error;
-        res.json(data);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// 2. Guardar o actualizar el tiempo del temporizador
-app.post('/api/config', async (req, res) => {
-    const { horas } = req.body;
-    try {
-        const { data, error } = await supabase
-            .from('config_rifa')
-            .upsert({ clave: 'tiempo_expiracion_horas', valor: horas.toString() }, { onConflict: 'clave' });
-        if (error) throw error;
-        res.json({ success: true, mensaje: 'Temporizador actualizado correctamente' });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// 3. Botón de liberación inmediata de un ticket específico
-app.post('/api/liberar-ticket', async (req, res) => {
-    const { numero } = req.body;
-    try {
-        const { data, error } = await supabase
-            .from('boletos')
-            .update({ estado: 'disponible', nombre: null, telefono: null, comprobante: null })
-            .eq('numero', numero);
-        if (error) throw error;
-        res.json({ success: true, mensaje: `El ticket #${numero} ha sido liberado.` });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// 4. Registrar ganador en el historial antes de resetear
-app.post('/api/registrar-ganador', async (req, res) => {
-    const { numero, nombre, telefono } = req.body;
-    try {
-        const { data, error } = await supabase
-            .from('historial_ganadores')
-            .insert([{ numero_ganador: numero, nombre_ganador: nombre, telefono_ganador: telefono }]);
-        if (error) throw error;
-        res.json({ success: true, mensaje: 'Ganador registrado en el historial con éxito' });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Servidor corriendo en puerto ${PORT}`);
 });
