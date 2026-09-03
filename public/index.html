@@ -846,7 +846,7 @@
        // Cargar la configuración actual del temporizador al abrir el panel
 async function cargarConfiguracion() {
     try {
-        const respuesta = await fetch(`${CONFIG.urlAppRifa}/api/config`);
+        const respuesta = await fetch(`${configGlobal.urlAppRifa}/api/config`);
         const datos = await respuesta.json();
         const configHoras = datos.find(item => item.clave === 'tiempo_expiracion_horas');
         if (configHoras) {
@@ -861,7 +861,7 @@ async function cargarConfiguracion() {
 async function guardarTemporizador() {
     const horas = document.getElementById('inputHorasTemporizador').value;
     try {
-        const respuesta = await fetch(`${CONFIG.urlAppRifa}/api/config`, {
+        const respuesta = await fetch(`${configGlobal.urlAppRifa}/api/config`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ horas })
@@ -892,7 +892,7 @@ function notificarGanadorWhatsApp(telefono, numero, nombre) {
 async function liberarTicketInmediato(numero) {
     if (!confirm(`¿Estás seguro de liberar inmediatamente el ticket #${numero}?`)) return;
     try {
-        const respuesta = await fetch(`${CONFIG.urlAppRifa}/api/liberar-ticket`, {
+        const respuesta = await fetch(`${configGlobal.urlAppRifa}/api/liberar-ticket`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ numero })
@@ -908,7 +908,7 @@ async function liberarTicketInmediato(numero) {
 // Al dar clic en ganador (ejecuta registro en base de datos y abre WhatsApp)
 async function declararGanador(numero, nombre, telefono) {
     try {
-        await fetch(`${CONFIG.urlAppRifa}/api/registrar-ganador`, {
+        await fetch(`${configGlobal.urlAppRifa}/api/registrar-ganador`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ numero, nombre, telefono })
