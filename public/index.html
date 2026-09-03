@@ -290,12 +290,12 @@
             }
         }
 
-        async function cargarConfiguracion() {
+       async function cargarConfiguracion() {
     try {
         const res = await fetch('/api/config');
         const data = await res.json();
         
-        // Adaptamos los datos por si el servidor los envía como lista o como objeto directo
+        // Adaptamos los datos por si el servidor los envía como lista u objeto
         let configObj = {};
         if (Array.isArray(data)) {
             data.forEach(item => { configObj[item.clave] = item.valor; });
@@ -306,27 +306,32 @@
         // Guardamos en la variable global
         configGlobal = configObj;
 
-        // Llenamos tus elementos HTML originales sin borrarlos
+        // 1. Título de la lotería
         const tituloEl = document.getElementById('tituloLoteria');
         if (tituloEl) {
-            tituloEl.innerHTML = `<span style="color: #f59e0b;">GRAN RIFA</span> ${configObj.loteria_nombre || 'Chontico Noche'}`;
+            const nombreLote = configObj.loteria_nombre || 'Chontico Noche';
+            tituloEl.innerHTML = `<span style="color: #f59e0b;">GRAN RIFA</span> ${nombreLote}`;
         }
 
+        // 2. Premio Mayor
         const premioEl = document.getElementById('premioHeader');
         if (premioEl) {
-            premioEl.innerHTML = `🏆 Premio Mayor: ${configObj.premio_mayor || '700.000 $ COP'}`;
+            const premioVal = configObj.premio_mayor || '700.000 $ COP';
+            premioEl.innerHTML = `🏆 Premio Mayor: ${premioVal}`;
         }
 
+        // 3. Fecha del Sorteo
         const fechaEl = document.getElementById('fechaSorteoHeader');
         if (fechaEl) {
-            const fechaTexto = configObj.fecha_sorteo ? formatearFechaTexto(configObj.fecha_sorteo) : 'Por definir';
-            fechaEl.innerHTML = `📅 Fecha del Sorteo: ${fechaTexto}`;
+            const fechaVal = configObj.fecha_sorteo ? formatearFechaTexto(configObj.fecha_sorteo) : 'Jueves 3 de Septiembre 2026';
+            fechaEl.innerHTML = `📅 Sorteo: ${fechaVal}`;
         }
 
+        // 4. Precio del Boleto
         const precioEl = document.getElementById('precioBoletoHeader');
         if (precioEl) {
-            const precioNum = Number(configObj.precio_boleto || 10000);
-            precioEl.innerHTML = `🪙 Valor Boleto: $${precioNum.toLocaleString()}`;
+            const precioVal = configObj.precio_boleto || '10000';
+            precioEl.innerHTML = `🪙 Valor Boleto: $${precioVal}`;
         }
 
     } catch (e) {
