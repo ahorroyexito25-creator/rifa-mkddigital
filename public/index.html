@@ -3,519 +3,414 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rifa MKDdigital 🎟️</title>
+    <title>Sistema de Rifas y Sorteos</title>
     <style>
+        :root {
+            --primary: #059669;
+            --primary-dark: #047857;
+            --danger: #dc2626;
+            --bg-color: #f8fafc;
+            --text-color: #1e293b;
+            --card-bg: #ffffff;
+            --border-color: #cbd5e1;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #cbd5e1;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             margin: 0;
             padding: 0;
-            color: #0f172a;
-        }
-
-        .header-rifa {
-            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-            padding: 35px 20px;
-            text-align: center;
-            border-bottom: 4px solid #f59e0b;
-            box-shadow: 0 15px 40px -10px rgba(0,0,0,0.7);
-            position: relative;
-            z-index: 10;
-        }
-
-        .dado-contenedor {
-            perspective: 600px;
-            display: inline-block;
-            margin-bottom: 5px;
-        }
-
-        @keyframes float3d {
-            0% { transform: translateY(0px) rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
-            50% { transform: translateY(-10px) rotateX(15deg) rotateY(25deg) rotateZ(5deg); }
-            100% { transform: translateY(0px) rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
-        }
-
-        .dado-flotante {
-            display: inline-block;
-            font-size: 45px;
-            animation: float3d 4s ease-in-out infinite;
-            transform-style: preserve-3d;
-            filter: drop-shadow(0 10px 15px rgba(245, 158, 11, 0.4));
-        }
-
-        .marca-rifa {
-            font-size: 13px;
-            letter-spacing: 3px;
-            color: #38bdf8;
-            text-transform: uppercase;
-            font-weight: 800;
-            margin-bottom: 5px;
-        }
-
-        .titulo-rifa {
-            margin: 0 0 15px 0;
-            font-family: 'Impact', Charcoal, sans-serif;
-            font-size: 38px;
-            font-weight: 400;
-            color: #f1f5f9;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 5px 0 rgba(0,0,0,0.5), 0 10px 10px rgba(0,0,0,0.8);
-        }
-
-        .caja-info {
-            display: inline-flex;
+            display: flex;
             flex-direction: column;
-            gap: 8px;
-            background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
-            padding: 15px 25px;
-            border-radius: 20px;
-            border: 2px solid #475569;
-            box-shadow: inset 0 2px 5px rgba(255,255,255,0.1), 0 5px 15px rgba(0,0,0,0.5);
-            max-width: 500px;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        header h1 {
+            margin: 0 0 5px 0;
+            font-size: 1.8rem;
+        }
+
+        header p {
+            margin: 0;
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        main {
+            flex: 1;
+            max-width: 1200px;
             width: 100%;
+            margin: 0 auto;
+            padding: 20px;
             box-sizing: border-box;
         }
 
-        #grid-boletos {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
-            gap: 12px;
-            padding: 25px;
-            max-width: 950px;
-            margin: 0 auto;
+        .admin-btn-container {
+            text-align: right;
+            margin-bottom: 15px;
         }
 
-        .ticket {
-            text-align: center;
-            border-radius: 8px;
+        .btn-admin {
+            background: #334155;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
             cursor: pointer;
             font-weight: bold;
-            font-size: 18px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+            font-size: 14px;
+        }
+
+        .btn-admin:hover {
+            background: #1e293b;
+        }
+
+        .info-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
             display: flex;
-            flex-direction: column;
+            justify-content: space-between;
             align-items: center;
-            justify-content: center;
-            aspect-ratio: 1 / 1;
-            padding: 8px;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        
-        .disponible { 
-            background-color: #059669; 
-            color: #ffffff; 
-            border: 1px solid #000000;
-        }
-        .disponible:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.6);
-            background-color: #047857;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
-        .reservado { 
-            background-color: #d97706; 
-            color: white; 
-            pointer-events: none; 
-            border: 1px solid #000000;
-            opacity: 0.9;
+        .board-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
 
-        .pagado { 
-            background-color: #dc2626; 
-            color: white; 
-            pointer-events: none; 
-            border: 1px solid #000000;
-            opacity: 0.9;
+        .grid-boletos {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+            gap: 8px;
+            margin-top: 15px;
+            max-height: 500px;
+            overflow-y: auto;
+            padding: 5px;
         }
 
-        .estado-texto {
-            font-size: 9px;
-            margin-top: 3px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            opacity: 0.9;
+        .boleto {
+            padding: 10px 5px;
+            text-align: center;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+            transition: transform 0.1s;
         }
-        
+
+        .boleto:hover {
+            transform: scale(1.05);
+        }
+
+        .boleto.disponible {
+            background-color: #d1fae5;
+            color: #065f46;
+            border: 1px solid #34d399;
+        }
+
+        .boleto.reservado {
+            background-color: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fbbf24;
+        }
+
+        .boleto.pagado {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #f87171;
+            cursor: not-allowed;
+        }
+
+        /* Modales */
         .modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 1000;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 15px;
+            box-sizing: border-box;
         }
+
         .modal-content {
-            background: #ffffff; color: #1e293b; padding: 25px; border-radius: 12px; width: 90%; max-width: 450px; text-align: left;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box;
             max-height: 90vh;
             overflow-y: auto;
         }
-        .modal-content input[type="text"],
-        .modal-content input[type="tel"],
-        .modal-content input[type="email"],
-        .modal-content input[type="number"],
-        .modal-content input[type="password"],
-        .modal-content input[type="datetime-local"],
-        .modal-content input[type="file"],
-        .modal-content select,
-        .modal-content textarea {
-            width: 100%; padding: 8px 10px; margin: 6px 0; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;
+
+        .modal-content label {
+            display: block;
+            margin-top: 10px;
+            font-size: 12px;
+            font-weight: bold;
         }
+
+        .modal-content input, .modal-content select, .modal-content textarea {
+            width: 100%;
+            padding: 8px 10px;
+            margin-top: 4px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
         .modal-buttons {
-            display: flex; gap: 10px; justify-content: center; margin-top: 15px;
-        }
-        .btn-guardar { background-color: #0284c7; color: white; padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; }
-        .btn-cancelar { background-color: #e11d48; color: white; padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        
-        .whatsapp-flotante {
-            position: fixed;
-            bottom: 25px;
-            right: 25px;
-            background-color: #25d366;
-            color: white;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 32px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
-            z-index: 999;
-            text-decoration: none;
-            transition: transform 0.3s ease, background-color 0.3s ease;
+            gap: 10px;
+            margin-top: 15px;
         }
-        .whatsapp-flotante:hover {
-            transform: scale(1.1);
-            background-color: #20ba5a;
+
+        .btn-guardar {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .btn-guardar:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-cancelar {
+            background: #e2e8f0;
+            color: #475569;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .btn-cancelar:hover {
+            background: #cbd5e1;
         }
 
         footer {
             text-align: center;
-            padding: 30px 15px;
-            color: #475569;
+            padding: 15px;
+            background: #1e293b;
+            color: white;
             font-size: 13px;
-        }
-        footer a {
-            color: #334155;
-            text-decoration: none;
-            font-weight: 600;
-        }
-        footer a:hover {
-            text-decoration: underline;
-        }
-
-        .descargo-legal {
-            max-width: 700px;
-            margin: 20px auto 10px auto;
-            padding: 12px 18px;
-            background: rgba(30, 41, 59, 0.05);
-            border: 1px dashed #94a3b8;
-            border-radius: 8px;
-            font-size: 11px;
-            color: #475569;
-            text-align: justify;
-            line-height: 1.4;
+            margin-top: auto;
         }
     </style>
 </head>
 <body>
 
-    <div class="header-rifa">
-        <div class="dado-contenedor">
-            <div class="dado-flotante">🎲</div>
-        </div>
-        <div class="marca-rifa">Rifa MKDdigital</div>
-        <h1 class="titulo-rifa" id="tituloLoteria">
-            <span style="color: #f59e0b;">GRAN RIFA</span> CHONTICO NOCHE
-        </h1>
-        <div class="caja-info">
-            <div id="fechaHoyHeader" style="font-size: 12px; color: #38bdf8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">📅 Hoy: Cargando...</div>
-            <div style="height: 1px; background: #475569; width: 100%;"></div>
-            <div id="premioHeader" style="font-size: 15px; font-weight: 800; color: #f59e0b;">🏆 Premio Mayor: Cargando...</div>
-            <div style="height: 1px; background: #475569; width: 100%;"></div>
-            <div id="fechaSorteoHeader" style="font-size: 13px; color: #e2e8f0; font-weight: 600;">📅 Sorteo: Cargando...</div>
-            <div style="height: 1px; background: #475569; width: 100%;"></div>
-            <div id="precioBoletoHeader" style="font-size: 14px; font-weight: 800; color: #34d399;">💰 Valor Boleto: Cargando...</div>
-        </div>
-    </div>
+    <header>
+        <h1 id="tituloLoteria">Rifa Oficial</h1>
+        <p id="subtituloPremio">Gran Sorteo Millonario</p>
+    </header>
 
-    <div id="grid-boletos"></div>
+    <main>
+        <div class="admin-btn-container">
+            <button class="btn-admin" onclick="abrirAdmin()">Panel Administrador ⚙️</button>
+        </div>
 
-    <a id="whatsappFlotanteBtn" href="#" target="_blank" class="whatsapp-flotante" title="Atención y Soporte por WhatsApp">
-        💬
-    </a>
+        <div class="info-panel">
+            <div>
+                <h3 style="margin:0 0 5px 0;">📅 Fecha del Sorteo</h3>
+                <p id="textoFechaSorteo" style="margin:0; color:#64748b;">Cargando fecha...</p>
+            </div>
+            <div>
+                <h3 style="margin:0 0 5px 0;">💵 Precio por Boleto</h3>
+                <p id="textoPrecioBoleto" style="margin:0; color:#64748b;">Cargando precio...</p>
+            </div>
+            <div id="divFechaDinamicaHoy"></div>
+        </div>
+
+        <div class="board-container">
+            <h3 style="margin-top:0;">Selecciona tu número de la suerte</h3>
+            <div style="display: flex; gap: 15px; font-size: 12px; margin-bottom: 10px;">
+                <span style="display:flex; align-items:center; gap:4px;"><span style="width:12px; height:12px; background:#d1fae5; border:1px solid #34d399; display:inline-block; border-radius:2px;"></span> Disponible</span>
+                <span style="display:flex; align-items:center; gap:4px;"><span style="width:12px; height:12px; background:#fef3c7; border:1px solid #fbbf24; display:inline-block; border-radius:2px;"></span> Reservado</span>
+                <span style="display:flex; align-items:center; gap:4px;"><span style="width:12px; height:12px; background:#fee2e2; border:1px solid #f87171; display:inline-block; border-radius:2px;"></span> Vendido / Pagado</span>
+            </div>
+            <div id="gridBoletos" class="grid-boletos">
+                <!-- Generado dinámicamente -->
+            </div>
+        </div>
+    </main>
 
     <footer>
-        <div class="descargo-legal">
-            <strong>Descargo de responsabilidad:</strong> Este sitio web opera exclusivamente como un entorno de prueba, demostración técnica y validación de software para fines didácticos y de desarrollo. No representa una plataforma oficial de juegos de azar comerciales ni realiza transacciones de lotería con validez legal comercial directa.
-        </div>
-        <p>Rifa MKDDigital © 2026 - Todos los derechos reservados</p>
-        <p style="margin-top: 5px;">
-            <a href="#" onclick="abrirAdmin(); return false;">⚙️ Panel Administrativo</a>
-        </p>
+        <p>&copy; 2026 API Rifa - Todos los derechos reservados.</p>
     </footer>
 
     <script>
         let configGlobal = {
-            pais: "colombia",
-            moneda: "COP",
-            simbolo_moneda: "$",
-            loteria_nombre: "Chontico Noche",
-            fecha_sorteo: "2026-09-05T19:00",
+            pais: 'colombia',
+            loteria_nombre: 'Chontico Noche',
+            premio_mayor: '700.000 $ COP',
             precio_boleto: 10000,
-            premio_mayor: "700.000 $ COP",
-            nequi_numero: "3150000000",
-            nequi_qr: "",
-            bancolombia_numero: "000-00000-00",
-            bancolombia_qr: "",
-            pago_movil_datos: "Banco Mercantil | Tel: 0414-0000000 | C.I: V-12345678",
-            whatsapp_numero: "573150000000"
+            simbolo_moneda: '$',
+            moneda: 'COP',
+            whatsapp_numero: '573150000000',
+            nequi_numero: '',
+            nequi_qr: '',
+            bancolombia_numero: '',
+            bancolombia_qr: '',
+            pago_movil_datos: '',
+            fecha_sorteo: ''
         };
 
-        function mostrarFechaHoyDinamica() {
-            const ahora = new Date();
-            const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-            const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-            const texto = `${dias[ahora.getDay()]} ${ahora.getDate()} de ${meses[ahora.getMonth()]} del ${ahora.getFullYear()}`.toUpperCase();
-            const el = document.getElementById('fechaHoyHeader');
-            if (el) el.innerHTML = `📅 Hoy: <strong>${texto}</strong>`;
-        }
-
-        function formatearFechaTexto(fechaIso) {
-            if (!fechaIso) return "Por definir";
-            try {
-                const fecha = new Date(fechaIso);
-                if (isNaN(fecha.getTime())) return fechaIso;
-                return fecha.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
-            } catch (e) {
-                return fechaIso;
-            }
-        }
+        let boletosGlobal = {};
 
         async function cargarConfiguracion() {
             try {
-                const res = await fetch('/api/config');
+                const res = await fetch('/api/config', { cache: 'no-store' });
                 const data = await res.json();
-                if (data && data.loteria_nombre) {
-                    configGlobal = data;
-                    document.getElementById('tituloLoteria').innerHTML = `<span style="color: #f59e0b;">GRAN RIFA</span> ${data.loteria_nombre}`;
-                    document.getElementById('premioHeader').innerHTML = `🏆 Premio Mayor: ${data.premio_mayor || '700.000 $ COP'}`;
-                    document.getElementById('precioBoletoHeader').textContent = `💰 Valor Boleto: ${data.simbolo_moneda || '$'}${Number(data.precio_boleto).toLocaleString()} ${data.moneda}`;
-                    document.getElementById('fechaSorteoHeader').innerHTML = `📅 Fecha del Sorteo: ${formatearFechaTexto(data.fecha_sorteo)}`;
-                    
-                    const wppBtn = document.getElementById('whatsappFlotanteBtn');
-                    const numWpp = (data.whatsapp_numero || '573150000000').replace(/\D/g, '');
-                    wppBtn.href = `https://wa.me/${numWpp}?text=` + encodeURIComponent(`Hola, deseo más información sobre la rifa ${data.loteria_nombre} y la disponibilidad de boletos.`);
+                if (data) {
+                    configGlobal = { ...configGlobal, ...data };
+                    document.getElementById('tituloLoteria').textContent = configGlobal.loteria_nombre;
+                    document.getElementById('subtituloPremio').textContent = `Premio Mayor: ${configGlobal.premio_mayor}`;
+                    document.getElementById('textoFechaSorteo').textContent = formatearFechaTexto(configGlobal.fecha_sorteo) || 'Por definir';
+                    document.getElementById('textoPrecioBoleto').textContent = `${configGlobal.simbolo_moneda || '$'}${Number(configGlobal.precio_boleto || 0).toLocaleString()} ${configGlobal.moneda || ''}`;
                 }
             } catch (e) {
                 console.error("Error al cargar configuración:", e);
             }
         }
 
-        async function renderizarBoletos() {
-            try {
-                const res = await fetch('/api/boletos');
-                const estadoBoletos = await res.json();
-                const contenedor = document.getElementById('grid-boletos');
-                if (!contenedor) return;
+        function formatearFechaTexto(fechaStr) {
+            if (!fechaStr) return '';
+            const fecha = new Date(fechaStr);
+            return isNaN(fecha) ? fechaStr : fecha.toLocaleString('es-CO', { dateStyle: 'full', timeStyle: 'short' });
+        }
 
-                contenedor.innerHTML = '';
-                for (let i = 0; i < 100; i++) {
-                    const numeroStr = String(i).padStart(2, '0');
-                    const boletoData = estadoBoletos[numeroStr];
-                    
-                    let estadoLim = 'DISPONIBLE';
-                    if (boletoData && typeof boletoData === 'object') {
-                        estadoLim = (boletoData.estado || 'DISPONIBLE').toUpperCase();
-                    }
-                    
-                    let claseCss = 'disponible';
-                    let textoEstado = 'Disponible';
-
-                    if (estadoLim === 'RESERVADO') {
-                        claseCss = 'reservado';
-                        textoEstado = 'Reservado';
-                    } else if (estadoLim === 'PAGADO' || estadoLim === 'JUGANDO') {
-                        claseCss = 'pagado';
-                        textoEstado = 'Jugando';
-                    }
-                    
-                    const div = document.createElement('div');
-                    div.className = `ticket ${claseCss}`;
-                    div.innerHTML = `<strong>${numeroStr}</strong><span class="estado-texto">${textoEstado}</span>`;
-                    
-                    if (claseCss === 'disponible') {
-                        div.onclick = () => abrirModalReserva(numeroStr);
-                    }
-                    contenedor.appendChild(div);
-                }
-            } catch (e) {
-                console.error("Error al sincronizar boletos:", e);
+        function mostrarFechaHoyDinamica() {
+            const hoy = new Date().toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            const contenedor = document.getElementById('divFechaDinamicaHoy');
+            if (contenedor) {
+                contenedor.innerHTML = `<h3 style="margin:0 0 5px 0;">🗓️ Hoy</h3><p style="margin:0; color:#64748b; text-transform:capitalize;">${hoy}</p>`;
             }
         }
 
-        function abrirModalReserva(numeroBoleto) {
-    if (document.getElementById('modal-comprador')) document.getElementById('modal-comprador').remove();
+        async function renderizarBoletos() {
+            const grid = document.getElementById('gridBoletos');
+            grid.innerHTML = '<p>Cargando boletos...</p>';
+            try {
+                const res = await fetch('/api/boletos', { cache: 'no-store' });
+                boletosGlobal = await res.json();
+                
+                let html = '';
+                for (let i = 0; i < 100; i++) {
+                    const numeroStr = String(i).padStart(2, '0');
+                    const boletoInfo = boletosGlobal[numeroStr] || boletosGlobal[i] || { estado: 'DISPONIBLE' };
+                    const estado = boletoInfo.estado ? boletoInfo.estado.toLowerCase() : 'disponible';
+                    
+                    let claseCss = 'disponible';
+                    if (estado === 'reservado') claseCss = 'reservado';
+                    if (estado === 'pagado') claseCss = 'pagado';
 
-    const modalHtml = `
-        <div id="modal-comprador" class="modal">
-            <div class="modal-content">
-                <h2 style="text-align: center; margin-top: 0;">${configGlobal.loteria_nombre}</h2>
-                <h3 style="text-align: center; color: #0284c7; margin: 5px 0;">Reservar Boleto: #${numeroBoleto}</h3>
-                <p style="font-size: 13px; color: #334155; text-align: center; background: #f1f5f9; padding: 10px; border-radius: 6px;">
-                    Valor del boleto: <b>${configGlobal.simbolo_moneda || '$'}${Number(configGlobal.precio_boleto).toLocaleString()} ${configGlobal.moneda || 'COP'}</b><br>
-                    <span style="color: #e11d48; font-weight: bold;">Tendrás 5 minutos para realizar y reportar tu pago tras registrarte.</span>
-                </p>
-                <form id="form-reserva">
-                    <input type="text" id="nombre" placeholder="Nombre completo" required />
-                    <input type="tel" id="telefono" placeholder="Teléfono / WhatsApp (ej: 3150000000)" required />
-                    <input type="text" id="ciudad" placeholder="Ciudad / Estado" required />
-                    <input type="email" id="email" placeholder="Correo electrónico" required />
-                    <div style="margin: 10px 0; font-size: 12px; display: flex; align-items: flex-start; gap: 8px;">
-                        <input type="checkbox" id="acepta-datos" required style="margin-top: 3px;" />
-                        <label for="acepta-datos" style="cursor: pointer; color: #334155;">
-                            Autorizo el tratamiento de mis datos personales para gestionar esta rifa.
-                        </label>
-                    </div>
-                    <div class="modal-buttons">
-                        <button type="submit" class="btn-guardar">Continuar al Pago</button>
-                        <button type="button" id="btn-cancelar" class="btn-cancelar">Cancelar</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    `;
-
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
-    document.getElementById('btn-cancelar').onclick = () => document.getElementById('modal-comprador').remove();
-
-    document.getElementById('form-reserva').onsubmit = async (e) => {
-        e.preventDefault();
-        try {
-            const datos = {
-                numero: numeroBoleto,
-                nombre: document.getElementById('nombre').value,
-                telefono: document.getElementById('telefono').value,
-                ciudad: document.getElementById('ciudad').value,
-                email: document.getElementById('email').value,
-                loteria: configGlobal.loteria_nombre,
-                fechaSorteo: formatearFechaTexto(configGlobal.fecha_sorteo),
-                aceptas_datos: document.getElementById('acepta-datos').checked
-            };
-
-            const respuesta = await fetch('/api/reservar', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(datos)
-            });
-
-            const resultado = await respuesta.json();
-            if (!respuesta.ok) throw new Error(resultado.error || "Error al reservar");
-
-            document.getElementById('modal-comprador').remove();
-            
-            // Activa la ventana flotante de instrucciones y temporizador de 5 minutos
-            abrirModalPagoInstrucciones(numeroBoleto, resultado.timestampReserva || Date.now());
-            renderizarBoletos();
-        } catch (err) {
-            alert("Error: " + err.message);
-            console.error(err);
+                    html += `<div class="boleto ${claseCss}" onclick="clikBoleto('${numeroStr}')">${numeroStr}</div>`;
+                }
+                grid.innerHTML = html;
+            } catch (e) {
+                grid.innerHTML = '<p style="color:red;">Error al cargar el tablero de boletos.</p>';
+            }
         }
-    };
-}
 
-        function abrirModalPagoInstrucciones(numeroBoleto, timestampReserva) {
-            if (document.getElementById('modal-pago-info')) document.getElementById('modal-pago-info').remove();
+        function clikBoleto(numero) {
+            const boletoInfo = boletosGlobal[numero] || { estado: 'DISPONIBLE' };
+            if (boletoInfo.estado === 'PAGADO') {
+                alert(`El boleto #${numero} ya se encuentra vendido.`);
+                return;
+            }
+            if (boletoInfo.estado === 'RESERVADO') {
+                alert(`El boleto #${numero} está reservado temporalmente.`);
+                return;
+            }
+            
+            // Abrir modal de compra/reserva para número disponible
+            abrirModalReserva(numero);
+        }
 
-            let qrNequiHtml = configGlobal.nequi_qr ? `<div style="text-align:center; margin: 10px 0;"><img src="${configGlobal.nequi_qr}" style="max-width:140px; border-radius:6px; border:1px solid #cbd5e1;" /><br><small style="color:#64748b;">Escanea para Nequi</small></div>` : '';
-            let qrBancolombiaHtml = configGlobal.bancolombia_qr ? `<div style="text-align:center; margin: 10px 0;"><img src="${configGlobal.bancolombia_qr}" style="max-width:140px; border-radius:6px; border:1px solid #cbd5e1;" /><br><small style="color:#64748b;">Escanea para Bancolombia</small></div>` : '';
+        function abrirModalReserva(numero) {
+            if (document.getElementById('modalReserva')) document.getElementById('modalReserva').remove();
 
-            const modalPagoHtml = `
-                <div id="modal-pago-info" class="modal">
-                    <div class="modal-content" style="max-width: 500px;">
-                        <h2 style="text-align: center; margin-top:0; color:#d97706;">¡Boleto #${numeroBoleto} Reservado!</h2>
-                        
-                        <div style="background: #fff7ed; border: 2px dashed #f59e0b; padding: 12px; border-radius: 8px; text-align: center; margin-bottom: 15px;">
-                            <span style="font-size: 13px; font-weight: bold; color: #9a3412;">⏱️ Tiempo límite para pagar:</span>
-                            <div id="temporizador-regresivo" style="font-size: 26px; font-weight: 900; color: #c2410c; margin-top: 4px;">05:00</div>
-                            <small style="color: #7c2d12;">Si pasa el tiempo, el número se liberará automáticamente.</small>
-                        </div>
+            const modalHtml = `
+                <div id="modalReserva" class="modal">
+                    <div class="modal-content">
+                        <h3 style="margin-top:0; color:var(--primary);">Reservar Boleto #${numero}</h3>
+                        <form onsubmit="procesarReserva(event, '${numero}')">
+                            <label>Nombre y Apellido:</label>
+                            <input type="text" id="nombreComprador" required placeholder="Tu nombre completo">
+                            
+                            <label>Número de Teléfono / WhatsApp:</label>
+                            <input type="text" id="telefonoComprador" required placeholder="Ej: 3150000000">
+                            
+                            <div style="background:#f1f5f9; padding:10px; border-radius:6px; margin-top:10px; font-size:13px;">
+                                <p style="margin:0 0 5px 0; font-weight:bold;">Instrucciones de Pago:</p>
+                                <p style="margin:0;">Paga <b>${configGlobal.simbolo_moneda || '$'}${Number(configGlobal.precio_boleto).toLocaleString()} ${configGlobal.moneda}</b> a través de nuestros medios autorizados y sube tu comprobante.</p>
+                                <p style="margin:5px 0 0 0;">Nequi: <b>${configGlobal.nequi_numero || 'No configurado'}</b></p>
+                            </div>
 
-                        <h4 style="margin: 5px 0; color: #1e293b;">📋 Elige dónde realizar tu pago:</h4>
-                        
-                        <div style="background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 13px; margin-bottom: 10px;">
-                            <b>Nequi:</b> <span style="color:#0284c7; font-weight:bold;">${configGlobal.nequi_numero || 'No configurado'}</span>
-                            ${qrNequiHtml}
-                        </div>
-
-                        <div style="background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 13px; margin-bottom: 10px;">
-                            <b>Bancolombia:</b> <span style="color:#0284c7; font-weight:bold;">${configGlobal.bancolombia_numero || 'No configurado'}</span>
-                            ${qrBancolombiaHtml}
-                        </div>
-
-                        <div style="background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 13px; margin-bottom: 15px;">
-                            <b>Pago Móvil / Otros Datos:</b><br>
-                            <span style="color:#334155;">${configGlobal.pago_movil_datos || 'No configurado'}</span>
-                        </div>
-
-                        <p style="font-size: 12px; color: #475569; text-align: center;">
-                            Una vez realizado tu pago, repórtalo enviando tu comprobante a nuestro canal de soporte por WhatsApp.
-                        </p>
-
-                        <div class="modal-buttons">
-                            <button type="button" class="btn-guardar" style="background-color: #25d366;" onclick="enviarComprobanteWpp('${numeroBoleto}')">💬 Reportar por WhatsApp</button>
-                            <button type="button" class="btn-cancelar" onclick="cerrarModalPago()">Entendido</button>
-                        </div>
+                            <div class="modal-buttons">
+                                <button type="submit" class="btn-guardar">Reservar y Pagar</button>
+                                <button type="button" class="btn-cancelar" onclick="document.getElementById('modalReserva').remove()">Cancelar</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             `;
-            document.body.insertAdjacentHTML('beforeend', modalPagoHtml);
-
-            // Iniciar Temporizador Regresivo (5 Minutos)
-            iniciarContadorRegresivo(timestampReserva);
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
         }
 
-        let intervaloReloj = null;
-        function iniciarContadorRegresivo(timestampReserva) {
-            if (intervaloReloj) clearInterval(intervaloReloj);
+        async function procesarReserva(e, numero) {
+            e.preventDefault();
+            const nombre = document.getElementById('nombreComprador').value;
+            const telefono = document.getElementById('telefonoComprador').value;
 
-            const DURACION_TOTAL = 5 * 60 * 1000; // 5 minutos en ms
-
-            intervaloReloj = setInterval(() => {
-                const ahora = Date.now();
-                const transcurrido = ahora - timestampReserva;
-                const restante = DURACION_TOTAL - transcurrido;
-
-                const elementoReloj = document.getElementById('temporizador-regresivo');
-                if (!elementoReloj) {
-                    clearInterval(intervaloReloj);
-                    return;
+            try {
+                const res = await fetch(`/api/reservar/${numero}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nombre, telefono })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert(`¡Boleto #${numero} reservado con éxito! Por favor completa tu pago.`);
+                    document.getElementById('modalReserva').remove();
+                    await renderizarBoletos();
+                } else {
+                    alert(data.error || 'No se pudo completar la reserva.');
                 }
-
-                if (restante <= 0) {
-                    clearInterval(intervaloReloj);
-                    alert("El tiempo de reserva ha expirado. El boleto ha sido liberado.");
-                    cerrarModalPago();
-                    renderizarBoletos();
-                    return;
-                }
-
-                const minutos = Math.floor((restante % (1000 * 60 * 60)) / (1000 * 60));
-                const segundos = Math.floor((restante % (1000 * 60)) / 1000);
-
-                elementoReloj.textContent = `${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
-            }, 1000);
-        }
-
-        function cerrarModalPago() {
-            if (intervaloReloj) clearInterval(intervaloReloj);
-            const modal = document.getElementById('modal-pago-info');
-            if (modal) modal.remove();
-            renderizarBoletos();
-        }
-
-        function enviarComprobanteWpp(numeroBoleto) {
-            const numWpp = (configGlobal.whatsapp_numero || '573150000000').replace(/\D/g, '');
-            const texto = `Hola, he realizado el pago de la reserva del boleto #${numeroBoleto} para la rifa ${configGlobal.loteria_nombre}. Adjunto mi comprobante.`;
-            window.open(`https://wa.me/${numWpp}?text=` + encodeURIComponent(texto), '_blank');
+            } catch (err) {
+                alert('Error de conexión al procesar reserva.');
+            }
         }
 
         function abrirAdmin() {
@@ -761,26 +656,26 @@
         }
         
         async function reiniciarSorteoTablero() {
-    if (!confirm("¿Estás seguro de iniciar un nuevo sorteo? Esto pondrá todos los boletos nuevamente en verde (disponibles) para la venta.")) {
-        return;
-    }
-    try {
-        const respuesta = await fetch('/api/admin/resetar-sorteo', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-        });
-        const resultado = await respuesta.json();
-        if (resultado.success) {
-            alert("¡Sorteo reiniciado con éxito! Todos los boletos están disponibles.");
-            location.reload();
-        } else {
-            alert("Error al reiniciar el sorteo.");
+            if (!confirm("¿Estás seguro de iniciar un nuevo sorteo? Esto pondrá todos los boletos nuevamente en verde (disponibles) para la venta.")) {
+                return;
+            }
+            try {
+                const respuesta = await fetch('/api/admin/resetar-sorteo', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const resultado = await respuesta.json();
+                if (resultado.success) {
+                    alert("¡Sorteo reiniciado con éxito! Todos los boletos están disponibles.");
+                    location.reload();
+                } else {
+                    alert("Error al reiniciar el sorteo.");
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Error de conexión al reiniciar.");
+            }
         }
-    } catch (e) {
-        console.error(e);
-        alert("Error de conexión al reiniciar.");
-    }
-}
         
         async function aprobarPagoAdmin(numero) {
             try {
@@ -801,11 +696,10 @@
                     const valorTicket = `${configGlobal.simbolo_moneda || '$'}${Number(configGlobal.precio_boleto).toLocaleString()} ${configGlobal.moneda}`;
                     const codigoSeguridad = 'MKD-' + Math.random().toString(36).substring(2, 8).toUpperCase() + '-' + numero;
 
-                    const mensaje = `============================\n COMPROBANTE OFICIAL DE RIFA   \n============================\n\n¡Hola ${nombreCliente}! Tu pago del boleto *#${numero}* ha sido confirmado.\n\n[+] Detalles de tu Ticket:\n - Fecha de compra: ${fechaCompra}\n - Lotería: ${configGlobal.loteria_nombre}\n - Fecha y hora del sorteo: ${fechaSorteoFormateada}\n - Valor del ticket: ${valorTicket}\n - Premio mayor: ${configGlobal.premio_mayor}\n - Código Antifraude: ${codigoSeguridad}\n\n¡Muchísima suerte!`;
+                    const mensaje = `============================\n COMPROBANTE OFICIAL DE RIFA    \n============================\n\n¡Hola ${nombreCliente}! Tu pago del boleto *#${numero}* ha sido confirmado.\n\n[+] Detalles de tu Ticket:\n - Fecha de compra: ${fechaCompra}\n - Lotería: ${configGlobal.loteria_nombre}\n - Fecha y hora del sorteo: ${fechaSorteoFormateada}\n - Valor del ticket: ${valorTicket}\n - Premio mayor: ${configGlobal.premio_mayor}\n - Código Antifraude: ${codigoSeguridad}\n\n¡Muchísima suerte!`;
                     
                     if (telefonoCliente) {
                         const telefonoLimpiado = telefonoCliente.replace(/\D/g, '');
-                        const numWppSoporte = (configGlobal.whatsapp_numero || '573150000000').replace(/\D/g, '');
                         window.open(`https://wa.me/${telefonoLimpiado}?text=${encodeURIComponent(mensaje)}`, '_blank');
                     }
 
