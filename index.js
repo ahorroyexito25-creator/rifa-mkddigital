@@ -255,6 +255,52 @@ app.post('/api/pagar/:numero', (req, res) => {
 });
 
 const PORT = process.env.PORT || 8080;
+// 1. Obtener la configuración del temporizador
+app.get('/api/configuracion', async (req, res) => {
+  const { data, error } = await supabase.from('configuracion_rifa').select('*').eq('id', 1).single();
+  if (error) return res.status(400).json({ error: error.message });
+  res.json(data);
+});
+
+// 2. Actualizar el temporizador (horas/días convertidos a horas)
+app.post('/api/configuracion', async (req, res) => {
+  const { horas_expiracion } = req.body;
+  const { data, error } = await supabase.from('configuracion_rifa').update({ horas_expiracion }).eq('id', 1);
+  if (error) return res.status(400).json({ error: error.message });
+  res.json({ success: true, message: "Temporizador actualizado con éxito" });
+});
+
+// 3. Liberar un ticket de forma inmediata (vuelve a estar disponible/libre)
+app.post('/api/liberar-ticket', async (req, res) => {
+  const { numero } = req.body;
+  const { data, error } = await supabase
+    .from('boletos')
+    .update({ estado: 'libre', nombre: null, telefono: null, reservado_hasta: null })
+    .eq('numero', numero);
+    
+  if (error) return res.status(400).json({ error: error.message });
+  res.json({ success: true, message: `El ticket ${numero} ha sido liberado.` });
+});
+
+// 4. Registrar ganador, guardar en historial y resetear la rifa para una nueva jugada
+app.post('/api/declarar-ganador-y-resetear', async (req, res) => {
+  const { numero, nombre, telefono, fecha_sorteo } = req.body;
+
+  // Guardar en el historial permanente
+  const { error: errorHistorial } = await supabase.from('historial_ganadores').insert([
+    { numero_ganador: numero, nombre_cliente: nombre, telefono_cliente: telefono, fecha_sorteo: fecha_sorteo }
+  ]);
+  if (errorHistorial) return res.status(400).json({ error: errorHistorial.message });
+
+  // Resetear todos los boletos de la rifa actual a estado libre
+  const { error: errorReset } = await supabase
+    .from('boletos')
+    .update({ estado: 'libre', nombre: null, telefono: null, reservado_hasta: null })
+    .neq('numero', 0); // Aplica a todos los boletos
+
+  if (errorReset) return res.status(400).json({ error: errorReset.message });
+  res.json({ success: true, message: "Ganador guardado en historial y rifa reseteada correctamente." });
+});
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Servidor corriendo en puerto ${PORT}`);
 });
