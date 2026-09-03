@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Rifas y Sorteos - API Rifa</title>
+    <title>Sistema de Rifas y Sorteos - Rifa MKDDIGITAL</title>
     <style>
         :root {
             --primary: #059669;
             --primary-dark: #047857;
             --danger: #dc2626;
-            --bg-color: #f8fafc;
-            --text-color: #1e293b;
-            --card-bg: #ffffff;
-            --border-color: #cbd5e1;
+            --bg-color: #0b0f19;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --border-color: #334155;
         }
 
         body {
@@ -27,22 +27,38 @@
         }
 
         header {
-            background-color: var(--primary);
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
             color: white;
-            padding: 1.5rem;
+            padding: 2rem 1rem;
             text-align: center;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border-bottom: 2px solid #334155;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .dice-icon {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            display: inline-block;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+        }
+
+        header h2 {
+            margin: 0;
+            font-size: 0.95rem;
+            letter-spacing: 2px;
+            color: #34d399;
+            text-transform: uppercase;
+            font-weight: 700;
         }
 
         header h1 {
-            margin: 0 0 5px 0;
-            font-size: 1.8rem;
-        }
-
-        header p {
-            margin: 0;
-            font-size: 1rem;
-            opacity: 0.9;
+            margin: 5px 0 0 0;
+            font-size: 2.2rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #fbbf24, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
         }
 
         main {
@@ -62,80 +78,143 @@
         .btn-admin {
             background: #334155;
             color: white;
-            border: none;
+            border: 1px solid #475569;
             padding: 8px 16px;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
             font-size: 14px;
-            transition: background 0.2s;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
         .btn-admin:hover {
-            background: #1e293b;
+            background: #475569;
+            border-color: #64748b;
         }
 
         .info-panel {
-            background: white;
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
             padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+            margin-bottom: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .info-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 15px;
+            gap: 10px;
+            font-size: 1rem;
+            border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+            padding-bottom: 8px;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
         }
 
         .board-container {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
         }
 
         .grid-boletos {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
-            gap: 8px;
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            gap: 12px;
             margin-top: 15px;
-            max-height: 500px;
+            max-height: 550px;
             overflow-y: auto;
             padding: 5px;
         }
 
         .boleto {
-            padding: 10px 5px;
+            padding: 15px 8px;
             text-align: center;
-            border-radius: 6px;
+            border-radius: 10px;
             font-weight: bold;
             cursor: pointer;
-            font-size: 14px;
-            transition: transform 0.1s, background-color 0.2s;
+            transition: transform 0.15s, box-shadow 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
         }
 
         .boleto:hover {
-            transform: scale(1.05);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+
+        .boleto .num {
+            font-size: 1.3rem;
+            font-weight: 800;
+        }
+
+        .boleto .estado-text {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .boleto.disponible {
-            background-color: #d1fae5;
-            color: #065f46;
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            color: white;
             border: 1px solid #34d399;
         }
 
         .boleto.reservado {
-            background-color: #fef3c7;
-            color: #92400e;
+            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+            color: white;
             border: 1px solid #fbbf24;
         }
 
         .boleto.pagado {
-            background-color: #fee2e2;
-            color: #991b1b;
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            color: white;
             border: 1px solid #f87171;
             cursor: not-allowed;
+            opacity: 0.9;
+        }
+
+        /* Botón Flotante WhatsApp */
+        .whatsapp-float {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            background-color: #25d366;
+            color: white;
+            border-radius: 50px;
+            text-align: center;
+            font-size: 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            z-index: 100;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: transform 0.2s;
+        }
+
+        .whatsapp-float:hover {
+            transform: scale(1.1);
         }
 
         /* Modales */
@@ -145,7 +224,8 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(5px);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -155,12 +235,14 @@
         }
 
         .modal-content {
-            background: white;
+            background: #1e293b;
+            color: #f8fafc;
+            border: 1px solid var(--border-color);
             padding: 25px;
-            border-radius: 10px;
+            border-radius: 12px;
             width: 100%;
             max-width: 480px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
             box-sizing: border-box;
             max-height: 90vh;
             overflow-y: auto;
@@ -168,18 +250,20 @@
 
         .modal-content label {
             display: block;
-            margin-top: 10px;
-            font-size: 12px;
+            margin-top: 12px;
+            font-size: 13px;
             font-weight: bold;
-            color: #334155;
+            color: #cbd5e1;
         }
 
         .modal-content input, .modal-content select, .modal-content textarea {
             width: 100%;
-            padding: 8px 10px;
-            margin-top: 4px;
+            padding: 10px;
+            margin-top: 5px;
+            background: #0f172a;
             border: 1px solid var(--border-color);
-            border-radius: 6px;
+            color: white;
+            border-radius: 8px;
             box-sizing: border-box;
             font-size: 14px;
         }
@@ -187,15 +271,15 @@
         .modal-buttons {
             display: flex;
             gap: 10px;
-            margin-top: 15px;
+            margin-top: 20px;
         }
 
         .btn-guardar {
             background: var(--primary);
             color: white;
             border: none;
-            padding: 10px;
-            border-radius: 6px;
+            padding: 12px;
+            border-radius: 8px;
             font-weight: bold;
             cursor: pointer;
             flex: 1;
@@ -207,11 +291,11 @@
         }
 
         .btn-cancelar {
-            background: #e2e8f0;
-            color: #475569;
+            background: #475569;
+            color: white;
             border: none;
-            padding: 10px;
-            border-radius: 6px;
+            padding: 12px;
+            border-radius: 8px;
             font-weight: bold;
             cursor: pointer;
             flex: 1;
@@ -219,33 +303,35 @@
         }
 
         .btn-cancelar:hover {
-            background: #cbd5e1;
+            background: #64748b;
         }
 
         footer {
             text-align: center;
-            padding: 15px;
-            background: #1e293b;
-            color: white;
+            padding: 20px;
+            background: #0f172a;
+            color: #94a3b8;
             font-size: 13px;
+            border-top: 1px solid var(--border-color);
             margin-top: auto;
         }
 
         .qr-preview {
-            max-width: 100px;
-            max-height: 100px;
-            margin-top: 5px;
+            max-width: 120px;
+            max-height: 120px;
+            margin-top: 8px;
             display: block;
-            border-radius: 4px;
-            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
         }
     </style>
 </head>
 <body>
 
     <header>
-        <h1 id="tituloLoteria">Rifa Oficial</h1>
-        <p id="subtituloPremio">Gran Sorteo Millonario</p>
+        <div class="dice-icon">🎲</div>
+        <h2 id="subtituloEmpresa">Rifa MKDDIGITAL</h2>
+        <h1 id="tituloLoteria">Gran Rifa Medellín</h1>
     </header>
 
     <main>
@@ -254,23 +340,22 @@
         </div>
 
         <div class="info-panel">
-            <div>
-                <h3 style="margin:0 0 5px 0;">📅 Fecha del Sorteo</h3>
-                <p id="textoFechaSorteo" style="margin:0; color:#64748b;">Cargando fecha...</p>
+            <div class="info-row">
+                <span id="divFechaDinamicaHoy">🗓️ <b>Hoy:</b> Cargando...</span>
+                <span id="textoPremioMayor">🏆 <b>Premio Mayor:</b> Cargando...</span>
             </div>
-            <div>
-                <h3 style="margin:0 0 5px 0;">💵 Precio por Boleto</h3>
-                <p id="textoPrecioBoleto" style="margin:0; color:#64748b;">Cargando precio...</p>
+            <div class="info-row">
+                <span id="textoFechaSorteo">📅 <b>Fecha del Sorteo:</b> Cargando...</span>
+                <span id="textoPrecioBoleto">💵 <b>Valor Boleto:</b> Cargando...</span>
             </div>
-            <div id="divFechaDinamicaHoy"></div>
         </div>
 
         <div class="board-container">
-            <h3 style="margin-top:0;">Selecciona tu número de la suerte</h3>
-            <div style="display: flex; gap: 15px; font-size: 12px; margin-bottom: 10px; flex-wrap: wrap;">
-                <span style="display:flex; align-items:center; gap:4px;"><span style="width:12px; height:12px; background:#d1fae5; border:1px solid #34d399; display:inline-block; border-radius:2px;"></span> Disponible</span>
-                <span style="display:flex; align-items:center; gap:4px;"><span style="width:12px; height:12px; background:#fef3c7; border:1px solid #fbbf24; display:inline-block; border-radius:2px;"></span> Reservado</span>
-                <span style="display:flex; align-items:center; gap:4px;"><span style="width:12px; height:12px; background:#fee2e2; border:1px solid #f87171; display:inline-block; border-radius:2px;"></span> Vendido / Pagado</span>
+            <h3 style="margin-top:0; color:#34d399;">Selecciona tu número de la suerte</h3>
+            <div style="display: flex; gap: 15px; font-size: 12px; margin-bottom: 15px; flex-wrap: wrap;">
+                <span style="display:flex; align-items:center; gap:6px;"><span style="width:14px; height:14px; background:#059669; border-radius:3px;"></span> Disponible</span>
+                <span style="display:flex; align-items:center; gap:6px;"><span style="width:14px; height:14px; background:#d97706; border-radius:3px;"></span> Reservado (Jugando)</span>
+                <span style="display:flex; align-items:center; gap:6px;"><span style="width:14px; height:14px; background:#dc2626; border-radius:3px;"></span> Vendido / Pagado</span>
             </div>
             <div id="gridBoletos" class="grid-boletos">
                 <!-- Generado dinámicamente -->
@@ -278,14 +363,18 @@
         </div>
     </main>
 
+    <a id="btnWhatsappFloat" href="#" target="_blank" class="whatsapp-float" title="Soporte WhatsApp">
+        💬
+    </a>
+
     <footer>
-        <p>&copy; 2026 API Rifa - Todos los derechos reservados.</p>
+        <p>&copy; 2026 Rifa MKDDIGITAL - Todos los derechos reservados.</p>
     </footer>
 
     <script>
         let configGlobal = {
             pais: 'colombia',
-            loteria_nombre: 'Chontico Noche',
+            loteria_nombre: 'Gran Rifa Medellín',
             premio_mayor: '700.000 $ COP',
             precio_boleto: 10000,
             simbolo_moneda: '$',
@@ -308,9 +397,14 @@
                 if (data) {
                     configGlobal = { ...configGlobal, ...data };
                     document.getElementById('tituloLoteria').textContent = configGlobal.loteria_nombre;
-                    document.getElementById('subtituloPremio').textContent = `Premio Mayor: ${configGlobal.premio_mayor}`;
-                    document.getElementById('textoFechaSorteo').textContent = formatearFechaTexto(configGlobal.fecha_sorteo) || 'Por definir';
-                    document.getElementById('textoPrecioBoleto').textContent = `${configGlobal.simbolo_moneda || '$'}${Number(configGlobal.precio_boleto || 0).toLocaleString()} ${configGlobal.moneda || ''}`;
+                    document.getElementById('textoPremioMayor').innerHTML = `🏆 <b>Premio Mayor:</b> ${configGlobal.premio_mayor}`;
+                    document.getElementById('textoFechaSorteo').innerHTML = `📅 <b>Fecha del Sorteo:</b> ${formatearFechaTexto(configGlobal.fecha_sorteo) || 'Por definir'}`;
+                    document.getElementById('textoPrecioBoleto').innerHTML = `💵 <b>Valor Boleto:</b> ${configGlobal.simbolo_moneda || '$'}${Number(configGlobal.precio_boleto || 0).toLocaleString()} ${configGlobal.moneda || ''}`;
+                    
+                    if (configGlobal.whatsapp_numero) {
+                        const wnum = configGlobal.whatsapp_numero.replace(/\D/g, '');
+                        document.getElementById('btnWhatsappFloat').href = `https://wa.me/${wnum}?text=${encodeURIComponent('Hola, deseo información sobre los boletos disponibles para la rifa.')}`;
+                    }
                 }
             } catch (e) {
                 console.error("Error al cargar configuración:", e);
@@ -327,13 +421,13 @@
             const hoy = new Date().toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
             const contenedor = document.getElementById('divFechaDinamicaHoy');
             if (contenedor) {
-                contenedor.innerHTML = `<h3 style="margin:0 0 5px 0;">🗓️ Hoy</h3><p style="margin:0; color:#64748b; text-transform:capitalize;">${hoy}</p>`;
+                contenedor.innerHTML = `🗓️ <b>Hoy:</b> <span style="text-transform:capitalize;">${hoy}</span>`;
             }
         }
 
         async function renderizarBoletos() {
             const grid = document.getElementById('gridBoletos');
-            grid.innerHTML = '<p>Cargando boletos...</p>';
+            grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #94a3b8;">Cargando boletos...</p>';
             try {
                 const res = await fetch('/api/boletos', { cache: 'no-store' });
                 boletosGlobal = await res.json();
@@ -345,14 +439,26 @@
                     const estado = boletoInfo.estado ? boletoInfo.estado.toLowerCase() : 'disponible';
                     
                     let claseCss = 'disponible';
-                    if (estado === 'reservado') claseCss = 'reservado';
-                    if (estado === 'pagado') claseCss = 'pagado';
+                    let textoEstado = 'DISPONIBLE';
+                    if (estado === 'reservado') {
+                        claseCss = 'reservado';
+                        textoEstado = 'JUGANDO';
+                    }
+                    if (estado === 'pagado') {
+                        claseCss = 'pagado';
+                        textoEstado = 'VENDIDO';
+                    }
 
-                    html += `<div class="boleto ${claseCss}" onclick="clikBoleto('${numeroStr}')">${numeroStr}</div>`;
+                    html += `
+                        <div class="boleto ${claseCss}" onclick="clikBoleto('${numeroStr}')">
+                            <span class="num">${numeroStr}</span>
+                            <span class="estado-text">${textoEstado}</span>
+                        </div>
+                    `;
                 }
                 grid.innerHTML = html;
             } catch (e) {
-                grid.innerHTML = '<p style="color:red;">Error al cargar el tablero de boletos.</p>';
+                grid.innerHTML = '<p style="color:#f87171; grid-column:1/-1; text-align:center;">Error al cargar el tablero de boletos.</p>';
             }
         }
 
@@ -363,7 +469,7 @@
                 return;
             }
             if (boletoInfo.estado === 'RESERVADO') {
-                alert(`El boleto #${numero} se encuentra actualmente reservado a la espera de confirmación de pago.`);
+                alert(`El boleto #${numero} se encuentra actualmente jugando / reservado a la espera de confirmación de pago.`);
                 return;
             }
             abrirModalReserva(numero);
@@ -372,13 +478,13 @@
         function abrirModalReserva(numero) {
             if (document.getElementById('modalReserva')) document.getElementById('modalReserva').remove();
 
-            let qrNequiHtml = configGlobal.nequi_qr ? `<div style="text-align:center; margin-top:8px;"><p style="margin:0; font-size:11px;">QR Nequi:</p><img src="${configGlobal.nequi_qr}" class="qr-preview" style="margin:0 auto;" /></div>` : '';
-            let qrBancolombiaHtml = configGlobal.bancolombia_qr ? `<div style="text-align:center; margin-top:8px;"><p style="margin:0; font-size:11px;">QR Bancolombia:</p><img src="${configGlobal.bancolombia_qr}" class="qr-preview" style="margin:0 auto;" /></div>` : '';
+            let qrNequiHtml = configGlobal.nequi_qr ? `<div style="text-align:center; margin-top:8px;"><p style="margin:0; font-size:11px; color:#cbd5e1;">QR Nequi:</p><img src="${configGlobal.nequi_qr}" class="qr-preview" style="margin:0 auto;" /></div>` : '';
+            let qrBancolombiaHtml = configGlobal.bancolombia_qr ? `<div style="text-align:center; margin-top:8px;"><p style="margin:0; font-size:11px; color:#cbd5e1;">QR Bancolombia:</p><img src="${configGlobal.bancolombia_qr}" class="qr-preview" style="margin:0 auto;" /></div>` : '';
 
             const modalHtml = `
                 <div id="modalReserva" class="modal">
                     <div class="modal-content">
-                        <h3 style="margin-top:0; color:var(--primary);">Reservar Boleto #${numero}</h3>
+                        <h3 style="margin-top:0; color:#34d399;">Reservar Boleto #${numero}</h3>
                         <form onsubmit="procesarReserva(event, '${numero}')">
                             <label>Nombre y Apellido:</label>
                             <input type="text" id="nombreComprador" required placeholder="Tu nombre completo">
@@ -386,12 +492,12 @@
                             <label>Número de Teléfono / WhatsApp:</label>
                             <input type="text" id="telefonoComprador" required placeholder="Ej: 3150000000">
                             
-                            <div style="background:#f1f5f9; padding:12px; border-radius:6px; margin-top:10px; font-size:13px;">
-                                <p style="margin:0 0 5px 0; font-weight:bold;">Instrucciones de Pago:</p>
-                                <p style="margin:0;">Paga <b>${configGlobal.simbolo_moneda || '$'}${Number(configGlobal.precio_boleto).toLocaleString()} ${configGlobal.moneda}</b> a través de los canales autorizados:</p>
-                                ${configGlobal.nequi_numero ? `<p style="margin:5px 0 0 0;">Nequi: <b>${configGlobal.nequi_numero}</b></p>` : ''}
-                                ${configGlobal.bancolombia_numero ? `<p style="margin:3px 0 0 0;">Bancolombia: <b>${configGlobal.bancolombia_numero}</b></p>` : ''}
-                                ${configGlobal.pago_movil_datos ? `<p style="margin:3px 0 0 0;">Pago Móvil / Otros: <b>${configGlobal.pago_movil_datos}</b></p>` : ''}
+                            <div style="background:#0f172a; padding:12px; border-radius:8px; margin-top:12px; font-size:13px; border:1px solid var(--border-color);">
+                                <p style="margin:0 0 5px 0; font-weight:bold; color:#34d399;">Instrucciones de Pago:</p>
+                                <p style="margin:0; color:#cbd5e1;">Paga <b>${configGlobal.simbolo_moneda || '$'}${Number(configGlobal.precio_boleto).toLocaleString()} ${configGlobal.moneda}</b> en los canales autorizados:</p>
+                                ${configGlobal.nequi_numero ? `<p style="margin:6px 0 0 0; color:#f8fafc;">Nequi: <b>${configGlobal.nequi_numero}</b></p>` : ''}
+                                ${configGlobal.bancolombia_numero ? `<p style="margin:4px 0 0 0; color:#f8fafc;">Bancolombia: <b>${configGlobal.bancolombia_numero}</b></p>` : ''}
+                                ${configGlobal.pago_movil_datos ? `<p style="margin:4px 0 0 0; color:#f8fafc;">Pago Móvil / Otros: <b>${configGlobal.pago_movil_datos}</b></p>` : ''}
                                 ${qrNequiHtml}
                                 ${qrBancolombiaHtml}
                             </div>
@@ -437,10 +543,10 @@
             const modalAdminHtml = `
                 <div id="modalAdmin" class="modal">
                     <div class="modal-content" style="max-width: 520px;">
-                        <h3 style="text-align:center; color:#1e293b; margin-top:0;">Panel de Administración ⚙️</h3>
+                        <h3 style="text-align:center; color:#34d399; margin-top:0;">Panel de Administración ⚙️</h3>
                         
                         <div id="divLogin">
-                            <p style="font-size:13px;">Ingrese la contraseña de acceso administrador:</p>
+                            <p style="font-size:13px; color:#cbd5e1;">Ingrese la contraseña de acceso administrador:</p>
                             <div style="position: relative; display: flex; align-items: center; margin: 8px 0;">
                                 <input type="password" id="inputPassword" placeholder="Contraseña" style="width: 100%; padding-right: 35px; margin: 0;" />
                                 <span onclick="togglePassword()" id="iconoOjo" style="position: absolute; right: 10px; cursor: pointer; user-select: none; font-size: 16px;">👁️</span>
@@ -452,15 +558,15 @@
                         </div>
 
                         <div id="divContenidoAdmin" style="display: none;">
-                            <h4 style="color: #333; margin-bottom: 5px;">🌍 Selección de Mercado / País</h4>
-                            <select id="adminPais" onchange="cambiarPlantillaPais()" class="input-control">
+                            <h4 style="color: #34d399; margin-bottom: 5px;">🌍 Selección de Mercado / País</h4>
+                            <select id="adminPais" onchange="cambiarPlantillaPais()">
                                 <option value="colombia">Colombia (COP - Nequi / Bancolombia)</option>
                                 <option value="venezuela_ves">Venezuela (Bolívares - Pago Móvil)</option>
                                 <option value="venezuela_usd">Venezuela (Dólares USD - Divisas)</option>
                             </select>
 
-                            <h4 style="color: #333; margin: 12px 0 5px 0;">⚙️ Configuración General</h4>
-                            <label>Nombre de la Lotería o Sorteo:</label>
+                            <h4 style="color: #34d399; margin: 15px 0 5px 0;">⚙️ Configuración General</h4>
+                            <label>Nombre de la Rifa o Sorteo:</label>
                             <input type="text" id="adminLoteria" value="${configGlobal.loteria_nombre}" />
                             
                             <label>Premio Mayor:</label>
@@ -481,7 +587,7 @@
                             <label>Número de WhatsApp (Soporte / Botón flotante):</label>
                             <input type="text" id="adminWhatsapp" value="${configGlobal.whatsapp_numero}" placeholder="Ej: 573150000000" />
 
-                            <h4 style="color: #333; margin: 15px 0 5px 0;">💳 Datos y QRs de Pago</h4>
+                            <h4 style="color: #34d399; margin: 15px 0 5px 0;">💳 Datos y QRs de Pago</h4>
                             
                             <label>Número Nequi:</label>
                             <input type="text" id="adminNequi" value="${configGlobal.nequi_numero || ''}" />
@@ -498,16 +604,16 @@
                             <label>Datos Pago Móvil / Otros (Texto):</label>
                             <textarea id="adminPagoMovil" rows="2">${configGlobal.pago_movil_datos || ''}</textarea>
 
-                            <button type="button" class="btn-guardar" onclick="guardarConfiguracionAdmin()" style="margin-top: 15px;">Guardar Cambios</button>
-                            <button type="button" class="btn-cancelar" onclick="reiniciarSorteoTablero()" style="margin-top: 10px; width: 100%; background: #dc2626; color: white; padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">🔄 Iniciar Nuevo Sorteo (Liberar todos los boletos)</button>
+                            <button type="button" class="btn-guardar" onclick="guardarConfiguracionAdmin()" style="margin-top: 15px; width: 100%;">Guardar Cambios</button>
+                            <button type="button" class="btn-cancelar" onclick="reiniciarSorteoTablero()" style="margin-top: 10px; width: 100%; background: #dc2626; color: white;">🔄 Iniciar Nuevo Sorteo (Guardar ganadores y liberar boletos)</button>
                             
-                            <h4 style="color: #333; margin: 15px 0 5px 0;">🎟️ Reservas Pendientes de Pago</h4>
-                            <div id="listaReservados" style="max-height: 140px; overflow-y: auto; font-size: 12px; border: 1px solid #cbd5e1; padding: 8px; border-radius: 6px; background:#fff;">Cargando...</div>
+                            <h4 style="color: #34d399; margin: 15px 0 5px 0;">🎟️ Reservas Pendientes de Pago</h4>
+                            <div id="listaReservados" style="max-height: 140px; overflow-y: auto; font-size: 12px; border: 1px solid var(--border-color); padding: 8px; border-radius: 8px; background:#0f172a;">Cargando...</div>
                             
-                            <div style="margin-top: 15px; border-top: 1px solid #cbd5e1; padding-top: 10px;">
-                                <h4 style="color: #333; margin-bottom: 5px;">🔑 Cambiar Clave de Administrador</h4>
+                            <div style="margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 12px;">
+                                <h4 style="color: #34d399; margin-bottom: 5px;">🔑 Cambiar Clave de Administrador</h4>
                                 <input type="password" id="nuevaPassword" placeholder="Nueva contraseña de administrador" />
-                                <button type="button" class="btn-guardar" onclick="actualizarPassword()" style="margin-top: 5px;">Actualizar Clave</button>
+                                <button type="button" class="btn-guardar" onclick="actualizarPassword()" style="margin-top: 8px; width: 100%;">Actualizar Clave</button>
                             </div>
 
                             <div class="modal-buttons" style="margin-top: 15px;">
@@ -529,7 +635,7 @@
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     document.getElementById(hiddenId).value = e.target.result;
-                    alert(`QR de ${tipo} cargado temporalmente. Haz clic en "Guardar Cambios" para aplicarlo de forma definitiva.`);
+                    alert(`QR de ${tipo} cargado temporalmente. Haz clic en "Guardar Cambios" para aplicarlo.`);
                 };
                 reader.readAsDataURL(file);
             }
@@ -542,7 +648,7 @@
                 document.getElementById('adminSimbolo').value = '$';
                 document.getElementById('adminPrecio').value = '10000';
                 document.getElementById('adminPremio').value = '700.000 $ COP';
-                document.getElementById('adminLoteria').value = 'Chontico Noche';
+                document.getElementById('adminLoteria').value = 'Gran Rifa Medellín';
             } else if (paisSel === 'venezuela_ves') {
                 document.getElementById('adminMoneda').value = 'VES';
                 document.getElementById('adminSimbolo').value = 'Bs. ';
@@ -620,7 +726,7 @@
                     await cargarConfiguracion();
                     document.getElementById('modalAdmin').remove();
                 } else {
-                    alert('Error al guardar la configuración en el servidor.');
+                    alert('Error al guardar la configuración.');
                 }
             } catch (e) {
                 alert('Error de conexión con el servidor.');
@@ -661,20 +767,20 @@
                 let html = '';
                 for (const [id, boleto] of Object.entries(dataBoletos)) {
                     if (typeof boleto === 'object' && boleto !== null && boleto.estado === 'RESERVADO') {
-                        html += `<div style="padding: 6px 0; border-bottom: 1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+                        html += `<div style="padding: 6px 0; border-bottom: 1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
                             <span><b>#${id}</b> - ${boleto.nombre || 'Reservado'} (${boleto.telefono || 'Sin tel'})</span>
-                            <button onclick="aprobarPagoAdmin('${id}')" style="background:#059669; color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px; font-weight:bold;">Aprobar Pago</button>
+                            <button onclick="aprobarPagoAdmin('${id}')" style="background:#059669; color:#fff; border:none; padding:5px 10px; border-radius:6px; cursor:pointer; font-size:11px; font-weight:bold;">Aprobar Pago</button>
                         </div>`;
                     }
                 }
-                contenedor.innerHTML = html || '<p style="margin:5px 0; color:#64748b;">No hay reservas pendientes de pago en este momento.</p>';
+                contenedor.innerHTML = html || '<p style="margin:5px 0; color:#94a3b8;">No hay reservas pendientes de pago en este momento.</p>';
             } catch (error) {
-                contenedor.innerHTML = '<p style="color: red;">Error al cargar datos de reservas.</p>';
+                contenedor.innerHTML = '<p style="color: #f87171;">Error al cargar datos de reservas.</p>';
             }
         }
         
         async function reiniciarSorteoTablero() {
-            if (!confirm("¿Estás seguro de iniciar un nuevo sorteo? Esto pondrá todos los boletos nuevamente en estado disponible (verde) para la venta.")) {
+            if (!confirm("¿Estás seguro de iniciar un nuevo sorteo? Esto registrará a los ganadores actuales en el historial y pondrá todos los boletos disponibles (verde) para la nueva venta.")) {
                 return;
             }
             try {
@@ -684,7 +790,7 @@
                 });
                 const resultado = await respuesta.json();
                 if (resultado.success) {
-                    alert("¡Sorteo reiniciado con éxito! Todos los boletos están disponibles.");
+                    alert("¡Sorteo reiniciado con éxito! Historial guardado y boletos liberados.");
                     location.reload();
                 } else {
                     alert("Error al reiniciar el sorteo.");
@@ -714,7 +820,7 @@
                     const valorTicket = `${configGlobal.simbolo_moneda || '$'}${Number(configGlobal.precio_boleto).toLocaleString()} ${configGlobal.moneda}`;
                     const codigoSeguridad = 'MKD-' + Math.random().toString(36).substring(2, 8).toUpperCase() + '-' + numero;
 
-                    const mensaje = `============================\n COMPROBANTE OFICIAL DE RIFA    \n============================\n\n¡Hola ${nombreCliente}! Tu pago del boleto *#${numero}* ha sido verificado y confirmado.\n\n[+] Detalles de tu Ticket:\n - Fecha de emisión: ${fechaCompra}\n - Lotería / Sorteo: ${configGlobal.loteria_nombre}\n - Fecha y hora del sorteo: ${fechaSorteoFormateada}\n - Valor del ticket: ${valorTicket}\n - Premio mayor: ${configGlobal.premio_mayor}\n - Código Antifraude: ${codigoSeguridad}\n\n¡Muchísima suerte en el sorteo!`;
+                    const mensaje = `============================\n COMPROBANTE OFICIAL - RIFA MKDDIGITAL\n============================\n\n¡Hola ${nombreCliente}! Tu pago del boleto *#${numero}* ha sido verificado y confirmado.\n\n[+] Detalles de tu Ticket:\n - Fecha de emisión: ${fechaCompra}\n - Rifa / Sorteo: ${configGlobal.loteria_nombre}\n - Fecha y hora del sorteo: ${fechaSorteoFormateada}\n - Valor del ticket: ${valorTicket}\n - Premio mayor: ${configGlobal.premio_mayor}\n - Código Antifraude: ${codigoSeguridad}\n\n¡Muchísima suerte en el sorteo!`;
                     
                     if (telefonoCliente) {
                         const telefonoLimpiado = telefonoCliente.replace(/\D/g, '');
