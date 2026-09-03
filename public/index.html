@@ -851,9 +851,17 @@ async function cargarConfiguracion() {
     try {
         const respuesta = await fetch(`${URL_SERVIDOR}/api/config`);
         const datos = await respuesta.json();
-        const configHoras = datos.find(item => item.clave === 'tiempo_expiracion_horas');
-        if (configHoras) {
-            document.getElementById('inputHorasTemporizador').value = configHoras.valor;
+        
+        let horasValor = "";
+        if (Array.isArray(datos)) {
+            const configHoras = datos.find(item => item.clave === 'tiempo_expiracion_horas');
+            if (configHoras) horasValor = configHoras.valor;
+        } else if (datos && typeof datos === 'object') {
+            horasValor = datos.tiempo_expiracion_horas || datos.valor || "";
+        }
+        
+        if (horasValor && document.getElementById('inputHorasTemporizador')) {
+            document.getElementById('inputHorasTemporizador').value = horasValor;
         }
     } catch (error) {
         console.error("Error al cargar configuración:", error);
