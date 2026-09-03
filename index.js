@@ -32,12 +32,13 @@ const DB_FILE = path.join(DATA_DIR, 'rifa.json');
 function limpiarReservasExpiradas(db) {
     const ahora = Date.now();
     let modificado = false;
-    const CINCO_MINUTOS = 5 * 60 * 1000;
+    const horasReserva = db.config && db.config.tiempo_reserva_horas !== undefined ? Number(db.config.tiempo_reserva_horas) : 24;
+    const TIEMPO_EXPIRACION = horasReserva * 60 * 60 * 1000;
     
     if (db.boletos) {
         for (const [numero, boleto] of Object.entries(db.boletos)) {
             if (boleto.estado === 'RESERVADO' && boleto.timestampReserva) {
-                if (ahora - boleto.timestampReserva > CINCO_MINUTOS) {
+                if (ahora - boleto.timestampReserva > TIEMPO_EXPIRACION) {
                     delete db.boletos[numero];
                     modificado = true;
                 }
@@ -69,10 +70,12 @@ function cargarBD() {
                     bancolombia_qr: '',
                     pago_movil_datos: 'Banco: Mercantil | Tel: 0414-0000000 | C.I: V-12345678',
                     whatsapp_numero: '573150000000',
-                    admin_password: '1234'
+                    admin_password: '1234',
+                    tiempo_reserva_horas: 24
                 },
                 boletos: {},
-                historial: []
+                historial: [],
+                ganadores_historicos: []
             };
             fs.writeFileSync(DB_FILE, JSON.stringify(initialData, null, 2), 'utf8');
         }
@@ -85,6 +88,8 @@ function cargarBD() {
         if (db.config.bancolombia_numero === undefined) db.config.bancolombia_numero = '';
         if (db.config.bancolombia_qr === undefined) db.config.bancolombia_qr = '';
         if (db.config.pago_movil_datos === undefined) db.config.pago_movil_datos = '';
+        if (db.config.tiempo_reserva_horas === undefined) db.config.tiempo_reserva_horas = 24;
+        if (!db.ganadores_historicos) db.ganadores_historicos = [];
 
         if (limpiarReservasExpiradas(db)) {
             guardarBD(db);
@@ -109,10 +114,12 @@ function cargarBD() {
                 bancolombia_qr: '',
                 pago_movil_datos: 'Banco: Mercantil | Tel: 0414-0000000 | C.I: V-12345678',
                 whatsapp_numero: '573150000000',
-                admin_password: '1234' 
+                admin_password: '1234',
+                tiempo_reserva_horas: 24 
             },
             boletos: {},
-            historial: []
+            historial: [],
+            ganadores_historicos: []
         };
     }
 }
@@ -135,7 +142,8 @@ app.post('/api/config', (req, res) => {
     const { 
         pais, moneda, simbolo_moneda, loteria_nombre, fecha_sorteo, 
         precio_boleto, premio_mayor, nequi_numero, nequi_qr, 
-        bancolombia_numero, bancolombia_qr, pago_movil_datos, whatsapp_numero 
+        bancolombia_numero, bancolombia_qr, pago_movil_datos, whatsapp_numero,
+        tiempo_reserva_horas 
     } = req.body;
     
     db.config.pais = pais || db.config.pais;
@@ -151,17 +159,38 @@ app.post('/api/config', (req, res) => {
     db.config.bancolombia_qr = bancolombia_qr !== undefined ? bancolombia_qr : (db.config.bancolombia_qr || '');
     db.config.pago_movil_datos = pago_movil_datos !== undefined ? pago_movil_datos : (db.config.pago_movil_datos || '');
     db.config.whatsapp_numero = whatsapp_numero !== undefined ? whatsapp_numero : (db.config.whatsapp_numero || '');
+    db.config.tiempo_reserva_horas = tiempo_reserva_horas !== undefined ? Number(tiempo_reserva_horas) : (db.config.tiempo_reserva_horas || 24);
     
     guardarBD(db);
     res.json({ success: true });
 });
 
-// NUEVA RUTA: Reiniciar el tablero de boletos para un nuevo sorteo (deja todos en verde)
+// Reiniciar el tablero de boletos guardando el ganador histórico y limpiando los activos
 app.post('/api/admin/resetar-sorteo', (req, res) => {
     const db = cargarBD();
+    const { numeroGanador } = req.body;
+
+    if (numeroGanador !== undefined && db.boletos[numeroGanador]) {
+        const ganador = db.boletos[numeroGanador];
+        if (!db.ganadores_historicos) db.ganadores_historicos = [];
+        db.ganadores_historicos.push({
+            numero: numeroGanador,
+            nombre: ganador.nombre,
+            telefono: ganador.telefono,
+            email: ganador.email,
+            loteria: db.config.loteria_nombre,
+            fecha: new Date().toLocaleString('es-ES', { timeZone: 'America/Bogota' })
+        });
+    }
+
     db.boletos = {}; // Limpia los boletos activos volviéndolos todos disponibles
     guardarBD(db);
-    res.json({ success: true, mensaje: "Tablero reiniciado correctamente." });
+    res.json({ success: true, mensaje: "Tablero reiniciado y ganador archivado correctamente." });
+});
+
+app.get('/api/admin/ganadores', (req, res) => {
+    const db = cargarBD();
+    res.json([...(db.ganadores_historicos || [])].reverse());
 });
 
 app.post('/api/admin/login', (req, res) => {
