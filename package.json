@@ -15,9 +15,10 @@
     "@supabase/supabase-js": "^2.112.4",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "ws": "^8.18.0"
   },
   "engines": {
-    "node": "22.x"
+    "node": ">=18.0.0"
   }
 }
