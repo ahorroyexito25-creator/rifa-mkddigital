@@ -1,17 +1,12 @@
-FROM node:18-alpine
-
-# Instalar herramientas de compilación para SQLite
-RUN apk add --no-cache python3 make g++
+FROM node:20-alpine
 
 WORKDIR /app
 
 COPY package*.json ./
-
-# Forzar la compilación limpia de los módulos nativos
-RUN npm install --build-from-source
+RUN npm install --omit=dev
 
 COPY . .
 
-EXPOSE 3000
+EXPOSE 8080
 
 CMD ["node", "index.js"]
