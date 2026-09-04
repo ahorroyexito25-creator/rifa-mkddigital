@@ -129,6 +129,34 @@
             opacity: 0.9;
         }
 
+        .ganador {
+            background-color: #ca8a04;
+            color: white;
+            pointer-events: none;
+            border: 2px solid #fbbf24;
+            opacity: 1;
+            box-shadow: 0 0 12px rgba(251, 191, 36, 0.8);
+        }
+
+        .fila-admin-boleto {
+            padding: 6px 0;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .fila-admin-boleto .btn-mini {
+            border: none;
+            color: #fff;
+            padding: 4px 7px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            white-space: nowrap;
+        }
+
         .estado-texto {
             font-size: 9px;
             margin-top: 3px;
@@ -267,8 +295,31 @@
             bancolombia_numero: "000-00000-00",
             bancolombia_qr: "",
             pago_movil_datos: "Banco Mercantil | Tel: 0414-0000000 | C.I: V-12345678",
-            whatsapp_numero: "573150000000"
+            whatsapp_numero: "573150000000",
+            reserva_duracion_valor: 5,
+            reserva_duracion_unidad: "minutos"
         };
+
+        let adminToken = null; // token de sesión de administrador, se llena al iniciar sesión
+
+        function calcularDuracionReservaMs() {
+            const valor = Number(configGlobal.reserva_duracion_valor) > 0 ? Number(configGlobal.reserva_duracion_valor) : 5;
+            const unidad = configGlobal.reserva_duracion_unidad || 'minutos';
+            const factores = { minutos: 60 * 1000, horas: 60 * 60 * 1000, dias: 24 * 60 * 60 * 1000 };
+            return valor * (factores[unidad] || factores.minutos);
+        }
+
+        function textoDuracionReserva() {
+            const valor = Number(configGlobal.reserva_duracion_valor) > 0 ? Number(configGlobal.reserva_duracion_valor) : 5;
+            const unidad = configGlobal.reserva_duracion_unidad || 'minutos';
+            const etiquetas = { minutos: valor === 1 ? 'minuto' : 'minutos', horas: valor === 1 ? 'hora' : 'horas', dias: valor === 1 ? 'día' : 'días' };
+            return `${valor} ${etiquetas[unidad] || etiquetas.minutos}`;
+        }
+
+        // Cabecera con el token de admin para las rutas protegidas
+        function headersAdmin(extra = {}) {
+            return { 'Content-Type': 'application/json', 'x-admin-token': adminToken || '', ...extra };
+        }
 
         function mostrarFechaHoyDinamica() {
             const ahora = new Date();
@@ -336,6 +387,9 @@
                     } else if (estadoLim === 'PAGADO' || estadoLim === 'JUGANDO') {
                         claseCss = 'pagado';
                         textoEstado = 'Jugando';
+                    } else if (estadoLim === 'GANADOR') {
+                        claseCss = 'ganador';
+                        textoEstado = '🏆 Ganador';
                     }
                     
                     const div = document.createElement('div');
@@ -362,7 +416,7 @@
                 <h3 style="text-align: center; color: #0284c7; margin: 5px 0;">Reservar Boleto: #${numeroBoleto}</h3>
                 <p style="font-size: 13px; color: #334155; text-align: center; background: #f1f5f9; padding: 10px; border-radius: 6px;">
                     Valor del boleto: <b>${configGlobal.simbolo_moneda || '$'}${Number(configGlobal.precio_boleto).toLocaleString()} ${configGlobal.moneda || 'COP'}</b><br>
-                    <span style="color: #e11d48; font-weight: bold;">Tendrás 5 minutos para realizar y reportar tu pago tras registrarte.</span>
+                    <span style="color: #e11d48; font-weight: bold;">Tendrás ${textoDuracionReserva()} para realizar y reportar tu pago tras registrarte.</span>
                 </p>
                 <form id="form-reserva">
                     <input type="text" id="nombre" placeholder="Nombre completo" required />
@@ -412,8 +466,8 @@
 
             document.getElementById('modal-comprador').remove();
             
-            // Activa la ventana flotante de instrucciones y temporizador de 5 minutos
-            abrirModalPagoInstrucciones(numeroBoleto, resultado.timestampReserva || Date.now());
+            // Activa la ventana flotante de instrucciones y el temporizador (duración configurada por el admin)
+            abrirModalPagoInstrucciones(numeroBoleto, resultado.timestampReserva || Date.now(), resultado.duracionReservaMs);
             renderizarBoletos();
         } catch (err) {
             alert("Error: " + err.message);
@@ -422,7 +476,7 @@
     };
 }
 
-        function abrirModalPagoInstrucciones(numeroBoleto, timestampReserva) {
+        function abrirModalPagoInstrucciones(numeroBoleto, timestampReserva, duracionReservaMs) {
             if (document.getElementById('modal-pago-info')) document.getElementById('modal-pago-info').remove();
 
             let qrNequiHtml = configGlobal.nequi_qr ? `<div style="text-align:center; margin: 10px 0;"><img src="${configGlobal.nequi_qr}" style="max-width:140px; border-radius:6px; border:1px solid #cbd5e1;" /><br><small style="color:#64748b;">Escanea para Nequi</small></div>` : '';
@@ -469,15 +523,15 @@
             `;
             document.body.insertAdjacentHTML('beforeend', modalPagoHtml);
 
-            // Iniciar Temporizador Regresivo (5 Minutos)
-            iniciarContadorRegresivo(timestampReserva);
+            // Iniciar Temporizador Regresivo (duración configurada por el admin: minutos, horas o días)
+            iniciarContadorRegresivo(timestampReserva, duracionReservaMs);
         }
 
         let intervaloReloj = null;
-        function iniciarContadorRegresivo(timestampReserva) {
+        function iniciarContadorRegresivo(timestampReserva, duracionReservaMs) {
             if (intervaloReloj) clearInterval(intervaloReloj);
 
-            const DURACION_TOTAL = 5 * 60 * 1000; // 5 minutos en ms
+            const DURACION_TOTAL = duracionReservaMs > 0 ? duracionReservaMs : calcularDuracionReservaMs();
 
             intervaloReloj = setInterval(() => {
                 const ahora = Date.now();
@@ -498,10 +552,20 @@
                     return;
                 }
 
+                const dias = Math.floor(restante / (1000 * 60 * 60 * 24));
+                const horas = Math.floor((restante % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 const minutos = Math.floor((restante % (1000 * 60 * 60)) / (1000 * 60));
                 const segundos = Math.floor((restante % (1000 * 60)) / 1000);
 
-                elementoReloj.textContent = `${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
+                let texto;
+                if (dias > 0) {
+                    texto = `${dias}d ${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
+                } else if (horas > 0) {
+                    texto = `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
+                } else {
+                    texto = `${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
+                }
+                elementoReloj.textContent = texto;
             }, 1000);
         }
 
@@ -567,6 +631,16 @@
 
                             <label style="font-size:11px; font-weight:bold;">Número de WhatsApp (Soporte / Botón flotante):</label>
                             <input type="text" id="adminWhatsapp" value="${configGlobal.whatsapp_numero}" placeholder="Ej: 573150000000" />
+
+                            <label style="font-size:11px; font-weight:bold;">⏱️ Tiempo límite para pagar la reserva:</label>
+                            <div style="display:flex; gap:8px;">
+                                <input type="number" id="adminDuracionValor" min="1" value="${configGlobal.reserva_duracion_valor || 5}" style="flex:1;" />
+                                <select id="adminDuracionUnidad" style="flex:1;">
+                                    <option value="minutos" ${configGlobal.reserva_duracion_unidad === 'minutos' ? 'selected' : ''}>Minutos</option>
+                                    <option value="horas" ${configGlobal.reserva_duracion_unidad === 'horas' ? 'selected' : ''}>Horas</option>
+                                    <option value="dias" ${configGlobal.reserva_duracion_unidad === 'dias' ? 'selected' : ''}>Días</option>
+                                </select>
+                            </div>
 
                             <h4 style="color: #333; margin: 10px 0 5px 0;">💳 Datos y QRs de Pago</h4>
                             
@@ -667,6 +741,7 @@
                 });
                 const data = await res.json();
                 if (data.success) {
+                    adminToken = data.token;
                     document.getElementById('divLogin').style.display = 'none';
                     document.getElementById('divContenidoAdmin').style.display = 'block';
                     cargarReservadosAdmin();
@@ -692,13 +767,15 @@
                 nequi_qr: document.getElementById('adminNequiQr').value,
                 bancolombia_numero: document.getElementById('adminBancolombia').value,
                 bancolombia_qr: document.getElementById('adminBancolombiaQr').value,
-                pago_movil_datos: document.getElementById('adminPagoMovil').value
+                pago_movil_datos: document.getElementById('adminPagoMovil').value,
+                reserva_duracion_valor: document.getElementById('adminDuracionValor').value,
+                reserva_duracion_unidad: document.getElementById('adminDuracionUnidad').value
             };
 
             try {
                 const res = await fetch('/api/config', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: headersAdmin(),
                     body: JSON.stringify(datosConfig)
                 });
                 const data = await res.json();
@@ -707,7 +784,7 @@
                     await cargarConfiguracion();
                     document.getElementById('modalAdmin').remove();
                 } else {
-                    alert('Error al guardar configuración.');
+                    alert(data.error || 'Error al guardar configuración.');
                 }
             } catch (e) {
                 alert('Error de conexión con el servidor.');
@@ -723,7 +800,7 @@
             try {
                 const res = await fetch('/api/admin/password', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: headersAdmin(),
                     body: JSON.stringify({ nuevaPassword })
                 });
                 const data = await res.json();
@@ -747,16 +824,104 @@
 
                 let html = '';
                 for (const [id, boleto] of Object.entries(dataBoletos)) {
-                    if (typeof boleto === 'object' && boleto !== null && boleto.estado === 'RESERVADO') {
-                        html += `<div style="padding: 4px 0; border-bottom: 1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
-                            <span><b>#${id}</b> - ${boleto.nombre || 'Reservado'}</span>
-                            <button onclick="aprobarPagoAdmin('${id}')" style="background:#059669; color:#fff; border:none; padding:3px 6px; border-radius:4px; cursor:pointer; font-size:11px;">Aprobar</button>
+                    if (typeof boleto !== 'object' || boleto === null) continue;
+
+                    if (boleto.estado === 'RESERVADO') {
+                        html += `<div class="fila-admin-boleto">
+                            <span><b>#${id}</b> - ${boleto.nombre || 'Reservado'} ${boleto.telefono ? `(${boleto.telefono})` : ''}</span>
+                            <span>
+                                <button onclick="aprobarPagoAdmin('${id}')" class="btn-mini" style="background:#059669;">Aprobar</button>
+                                <button onclick="enviarRecordatorioAdmin('${id}')" class="btn-mini" style="background:#25d366;">💬 Recordar</button>
+                                <button onclick="liberarBoletoAdmin('${id}')" class="btn-mini" style="background:#e11d48;">Liberar</button>
+                            </span>
+                        </div>`;
+                    } else if (boleto.estado === 'PAGADO' || boleto.estado === 'JUGANDO') {
+                        html += `<div class="fila-admin-boleto">
+                            <span><b>#${id}</b> - ${boleto.nombre || 'Jugando'} ${boleto.telefono ? `(${boleto.telefono})` : ''}</span>
+                            <span>
+                                <button onclick="declararGanadorAdmin('${id}')" class="btn-mini" style="background:#ca8a04;">🏆 Declarar Ganador</button>
+                            </span>
                         </div>`;
                     }
                 }
-                contenedor.innerHTML = html || '<p>No hay reservas activas.</p>';
+                contenedor.innerHTML = html || '<p>No hay reservas ni boletos jugando activos.</p>';
             } catch (error) {
                 contenedor.innerHTML = '<p style="color: red;">Error al cargar datos.</p>';
+            }
+        }
+
+        async function liberarBoletoAdmin(numero) {
+            if (!confirm(`¿Liberar el boleto #${numero} ahora mismo? Volverá a estar disponible de inmediato.`)) return;
+            try {
+                const res = await fetch(`/api/admin/liberar/${numero}`, { method: 'POST', headers: headersAdmin() });
+                const data = await res.json();
+                if (data.success) {
+                    cargarReservadosAdmin();
+                    renderizarBoletos();
+                } else {
+                    alert(data.error || 'No se pudo liberar el boleto.');
+                }
+            } catch (e) {
+                alert('Error de conexión con el servidor.');
+            }
+        }
+
+        async function enviarRecordatorioAdmin(numero) {
+            try {
+                const resBoletos = await fetch('/api/boletos');
+                const estadoBoletos = await resBoletos.json();
+                const boletoInfo = estadoBoletos[numero] || {};
+                const telefonoCliente = (boletoInfo.telefono || '').replace(/\D/g, '');
+                if (!telefonoCliente) {
+                    alert('Este boleto no tiene un teléfono registrado.');
+                    return;
+                }
+                const nombreCliente = boletoInfo.nombre || 'Cliente';
+                const mensaje = `Hola ${nombreCliente}, tu boleto *#${numero}* para la rifa ${configGlobal.loteria_nombre} sigue reservado, pero aún no hemos recibido el reporte de tu pago. Si no se confirma dentro del tiempo límite, el número se liberará automáticamente. ¡No pierdas tu lugar!`;
+                window.open(`https://wa.me/${telefonoCliente}?text=${encodeURIComponent(mensaje)}`, '_blank');
+            } catch (e) {
+                alert('Error de conexión con el servidor.');
+            }
+        }
+
+        async function declararGanadorAdmin(numero) {
+            if (!confirm(`¿Declarar el boleto #${numero} como GANADOR de la rifa? Esta acción quedará registrada permanentemente.`)) return;
+            try {
+                const res = await fetch(`/api/admin/ganador/${numero}`, { method: 'POST', headers: headersAdmin() });
+                const data = await res.json();
+                if (!data.success) {
+                    alert(data.error || 'No se pudo declarar el ganador.');
+                    return;
+                }
+
+                const ganador = data.ganador;
+                const telefonoCliente = (ganador.telefono || '').replace(/\D/g, '');
+                const { fecha, hora } = formatearFechaGanador(configGlobal.fecha_sorteo);
+                const mensaje = `Ha sido usted el feliz ganador de la rifa de ${configGlobal.loteria_nombre} de hoy ${fecha} de las ${hora}! ¡Felicidades!`;
+
+                if (telefonoCliente) {
+                    window.open(`https://wa.me/${telefonoCliente}?text=${encodeURIComponent(mensaje)}`, '_blank');
+                } else {
+                    alert('Ganador registrado, pero no tiene teléfono guardado para enviarle el mensaje por WhatsApp.');
+                }
+
+                cargarReservadosAdmin();
+                renderizarBoletos();
+            } catch (e) {
+                alert('Error de conexión con el servidor.');
+            }
+        }
+
+        function formatearFechaGanador(fechaIso) {
+            if (!fechaIso) return { fecha: '', hora: '' };
+            try {
+                const fecha = new Date(fechaIso);
+                if (isNaN(fecha.getTime())) return { fecha: fechaIso, hora: '' };
+                const fechaTexto = fecha.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+                const horaTexto = fecha.toLocaleTimeString('es-ES', { hour: 'numeric', minute: '2-digit', hour12: true });
+                return { fecha: fechaTexto, hora: horaTexto };
+            } catch (e) {
+                return { fecha: fechaIso, hora: '' };
             }
         }
         
@@ -767,14 +932,14 @@
     try {
         const respuesta = await fetch('/api/admin/resetar-sorteo', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
+            headers: headersAdmin()
         });
         const resultado = await respuesta.json();
         if (resultado.success) {
-            alert("¡Sorteo reiniciado con éxito! Todos los boletos están disponibles.");
+            alert("¡Sorteo reiniciado con éxito! Todos los boletos están disponibles. El historial de ganadores se conservó.");
             location.reload();
         } else {
-            alert("Error al reiniciar el sorteo.");
+            alert(resultado.error || "Error al reiniciar el sorteo.");
         }
     } catch (e) {
         console.error(e);
@@ -784,7 +949,7 @@
         
         async function aprobarPagoAdmin(numero) {
             try {
-                const res = await fetch(`/api/pagar/${numero}`, { method: 'POST' });
+                const res = await fetch(`/api/pagar/${numero}`, { method: 'POST', headers: headersAdmin() });
                 const data = await res.json();
                 
                 if (data.success) {
