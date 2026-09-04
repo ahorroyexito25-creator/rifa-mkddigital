@@ -278,8 +278,24 @@
         <p>Rifa MKDDigital © 2026 - Todos los derechos reservados</p>
         <p style="margin-top: 5px;">
             <a href="#" onclick="abrirAdmin(); return false;">⚙️ Panel Administrativo</a>
+            &nbsp;·&nbsp;
+            <a href="#" onclick="document.getElementById('modal-terminos').style.display='flex'; return false;">📄 Condiciones de participación</a>
         </p>
     </footer>
+
+    <div id="modal-terminos" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width: 500px; text-align:left; max-height: 80vh; overflow-y:auto;">
+            <h3 style="margin-top:0;">Condiciones de participación</h3>
+            <p style="font-size:13px; color:#334155; line-height:1.6;">
+                1. La reserva de un número no lo confirma como boleto oficial hasta que el pago sea validado por el organizador.<br><br>
+                2. Si el pago no se completa dentro del tiempo límite mostrado al reservar, el número vuelve a estar disponible automáticamente.<br><br>
+                3. Los datos personales solicitados (nombre, teléfono, ciudad, correo) se usan únicamente para gestionar esta rifa: identificar tu boleto, contactarte por WhatsApp sobre el estado de tu pago y notificarte si resultas ganador(a).<br><br>
+                4. El organizador de esta rifa es responsable de la entrega del premio y de la validez legal del sorteo ante las autoridades correspondientes de su país.<br><br>
+                5. Al marcar la casilla de aceptación, confirmas que has leído y aceptas estas condiciones.
+            </p>
+            <button type="button" class="btn-cancelar" style="margin-top:12px;" onclick="document.getElementById('modal-terminos').style.display='none';">Cerrar</button>
+        </div>
+    </div>
 
     <script>
         let configGlobal = {
@@ -426,7 +442,8 @@
                     <div style="margin: 10px 0; font-size: 12px; display: flex; align-items: flex-start; gap: 8px;">
                         <input type="checkbox" id="acepta-datos" required style="margin-top: 3px;" />
                         <label for="acepta-datos" style="cursor: pointer; color: #334155;">
-                            Autorizo el tratamiento de mis datos personales para gestionar esta rifa.
+                            Autorizo el tratamiento de mis datos personales para gestionar esta rifa y he leído las
+                            <a href="#" onclick="event.preventDefault(); document.getElementById('modal-terminos').style.display='flex';" style="color:#0284c7;">condiciones de participación</a>.
                         </label>
                     </div>
                     <div class="modal-buttons">
@@ -511,8 +528,15 @@
                         </div>
 
                         <p style="font-size: 12px; color: #475569; text-align: center;">
-                            Una vez realizado tu pago, repórtalo enviando tu comprobante a nuestro canal de soporte por WhatsApp.
+                            Una vez realizado tu pago, sube aquí la foto de tu comprobante (o repórtalo por WhatsApp).
                         </p>
+
+                        <div style="background: #f0fdf4; border: 1px solid #86efac; padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+                            <label style="font-size: 13px; font-weight: bold; color: #166534; display:block; margin-bottom:6px;">📎 Subir foto del comprobante:</label>
+                            <input type="file" id="input-comprobante-${numeroBoleto}" accept="image/*" style="width:100%; font-size:12px;" />
+                            <button type="button" class="btn-guardar" style="background-color:#16a34a; width:100%; margin-top:8px;" onclick="subirComprobante('${numeroBoleto}')">Enviar comprobante</button>
+                            <div id="estado-comprobante-${numeroBoleto}" style="font-size:12px; margin-top:6px; text-align:center;"></div>
+                        </div>
 
                         <div class="modal-buttons">
                             <button type="button" class="btn-guardar" style="background-color: #25d366;" onclick="enviarComprobanteWpp('${numeroBoleto}')">💬 Reportar por WhatsApp</button>
@@ -525,6 +549,47 @@
 
             // Iniciar Temporizador Regresivo (duración configurada por el admin: minutos, horas o días)
             iniciarContadorRegresivo(timestampReserva, duracionReservaMs);
+        }
+
+        async function subirComprobante(numeroBoleto) {
+            const input = document.getElementById(`input-comprobante-${numeroBoleto}`);
+            const estado = document.getElementById(`estado-comprobante-${numeroBoleto}`);
+            if (!input.files || !input.files[0]) {
+                estado.style.color = '#dc2626';
+                estado.textContent = 'Selecciona primero una imagen.';
+                return;
+            }
+            const archivo = input.files[0];
+            if (archivo.size > 8 * 1024 * 1024) {
+                estado.style.color = '#dc2626';
+                estado.textContent = 'La imagen es muy pesada (máximo 8MB).';
+                return;
+            }
+            estado.style.color = '#334155';
+            estado.textContent = 'Enviando...';
+
+            const lector = new FileReader();
+            lector.onload = async () => {
+                try {
+                    const res = await fetch(`/api/comprobante/${numeroBoleto}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ comprobante: lector.result })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        estado.style.color = '#16a34a';
+                        estado.textContent = '✅ Comprobante enviado. Espera la confirmación del organizador.';
+                    } else {
+                        estado.style.color = '#dc2626';
+                        estado.textContent = data.error || 'No se pudo enviar el comprobante.';
+                    }
+                } catch (e) {
+                    estado.style.color = '#dc2626';
+                    estado.textContent = 'Error de conexión al enviar el comprobante.';
+                }
+            };
+            lector.readAsDataURL(archivo);
         }
 
         let intervaloReloj = null;
@@ -827,9 +892,13 @@
                     if (typeof boleto !== 'object' || boleto === null) continue;
 
                     if (boleto.estado === 'RESERVADO') {
+                        const botonComprobante = boleto.tieneComprobante
+                            ? `<button onclick="verComprobanteAdmin('${id}')" class="btn-mini" style="background:#7c3aed;">🧾 Ver comprobante</button>`
+                            : `<span style="font-size:10px; color:#94a3b8;">Sin comprobante</span>`;
                         html += `<div class="fila-admin-boleto">
                             <span><b>#${id}</b> - ${boleto.nombre || 'Reservado'} ${boleto.telefono ? `(${boleto.telefono})` : ''}</span>
                             <span>
+                                ${botonComprobante}
                                 <button onclick="aprobarPagoAdmin('${id}')" class="btn-mini" style="background:#059669;">Aprobar</button>
                                 <button onclick="enviarRecordatorioAdmin('${id}')" class="btn-mini" style="background:#25d366;">💬 Recordar</button>
                                 <button onclick="liberarBoletoAdmin('${id}')" class="btn-mini" style="background:#e11d48;">Liberar</button>
@@ -847,6 +916,30 @@
                 contenedor.innerHTML = html || '<p>No hay reservas ni boletos jugando activos.</p>';
             } catch (error) {
                 contenedor.innerHTML = '<p style="color: red;">Error al cargar datos.</p>';
+            }
+        }
+
+        async function verComprobanteAdmin(numero) {
+            try {
+                const res = await fetch(`/api/admin/comprobante/${numero}`, { headers: headersAdmin() });
+                const data = await res.json();
+                if (!data.success) {
+                    alert(data.error || 'No se pudo cargar el comprobante.');
+                    return;
+                }
+                const ventana = document.createElement('div');
+                ventana.className = 'modal';
+                ventana.id = 'modal-comprobante';
+                ventana.innerHTML = `
+                    <div class="modal-content" style="max-width: 420px; text-align:center;">
+                        <h3 style="margin-top:0;">Comprobante del boleto #${numero}</h3>
+                        <img src="${data.comprobante}" style="max-width:100%; border-radius:8px; border:1px solid #e2e8f0;" />
+                        <button type="button" class="btn-cancelar" style="margin-top:12px;" onclick="document.getElementById('modal-comprobante').remove()">Cerrar</button>
+                    </div>
+                `;
+                document.body.appendChild(ventana);
+            } catch (e) {
+                alert('Error de conexión al cargar el comprobante.');
             }
         }
 
