@@ -1,5 +1,2 @@
 node_modules
 .env
-rifa.db
-rifa.db-shm
-rifa.db-wal

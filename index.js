@@ -12,8 +12,26 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+
+// CORS restringido: solo tu landing page y tu propio dominio de Render pueden
+// llamar a esta API. Se configura con la variable de entorno ALLOWED_ORIGINS
+// (separada por comas). Si no se define ninguna, se permite cualquier origen
+// (útil en desarrollo, pero se recomienda configurarla en producción).
+const origenesPermitidos = (process.env.ALLOWED_ORIGINS || '')
+    .split(',')
+    .map(o => o.trim())
+    .filter(Boolean);
+
+app.use(cors({
+    origin: function (origin, callback) {
+        // Sin "origin" = peticiones directas (Postman, apps móviles, el propio backend) → se permiten.
+        if (!origin) return callback(null, true);
+        if (origenesPermitidos.length === 0) return callback(null, true); // no configurado aún: permitir todo
+        if (origenesPermitidos.includes(origin)) return callback(null, true);
+        return callback(new Error('Origen no permitido por CORS: ' + origin));
+    }
+}));
+app.use(express.json({ limit: '15mb' }));
 
 const publicDir = path.join(__dirname, 'public');
 app.use(express.static(publicDir));
@@ -191,7 +209,8 @@ async function obtenerBoletosObj() {
             loteria: fila.loteria,
             fechaSorteo: fila.fecha_sorteo,
             fechaCompra: fila.fecha_compra,
-            timestampReserva: fila.timestamp_reserva
+            timestampReserva: fila.timestamp_reserva,
+            tieneComprobante: !!fila.comprobante
         };
     }
     return obj;
@@ -231,8 +250,29 @@ app.post('/api/reservar', async (req, res) => {
         if (!numero) {
             return res.status(400).json({ error: "Falta el número de boleto." });
         }
+        const telefonoLimpio = String(telefono || '').replace(/\D/g, '');
+        if (!nombre || nombre.trim().length < 3) {
+            return res.status(400).json({ error: "Ingresa tu nombre completo." });
+        }
+        if (telefonoLimpio.length < 7) {
+            return res.status(400).json({ error: "Ingresa un número de teléfono válido." });
+        }
 
-        const { data: existente } = await supabase.from('boletos').select('estado').eq('numero', numero).maybeSingle();
+        // Anti-abuso: evita que un mismo teléfono bloquee muchos números a la vez sin pagar.
+        const MAX_RESERVAS_ACTIVAS_POR_TELEFONO = 3;
+        const { count: reservasActivas } = await supabase
+            .from('boletos')
+            .select('numero', { count: 'exact', head: true })
+            .eq('telefono', telefonoLimpio)
+            .eq('estado', 'RESERVADO');
+        if ((reservasActivas || 0) >= MAX_RESERVAS_ACTIVAS_POR_TELEFONO) {
+            return res.status(400).json({ error: `Ya tienes ${MAX_RESERVAS_ACTIVAS_POR_TELEFONO} boletos reservados sin pagar. Completa esos pagos antes de reservar otro número.` });
+        }
+
+        const { data: existente, error: errorSelect } = await supabase.from('boletos').select('estado').eq('numero', numero).maybeSingle();
+        if (errorSelect) {
+            console.error('Error real al consultar boleto existente en Supabase:', errorSelect);
+        }
         if (existente) {
             return res.status(400).json({ error: "El boleto ya no está disponible." });
         }
@@ -249,16 +289,17 @@ app.post('/api/reservar', async (req, res) => {
         const timestampReserva = Date.now();
 
         const { error: errorInsert } = await supabase.from('boletos').insert({
-            numero, estado: 'RESERVADO', nombre, telefono, ciudad, email, loteria,
+            numero, estado: 'RESERVADO', nombre, telefono: telefonoLimpio, ciudad, email, loteria,
             fecha_sorteo: fechaSorteo, fecha_compra: fechaCompra, timestamp_reserva: timestampReserva
         });
         if (errorInsert) {
-            // Si dos personas reservan el mismo número al mismo tiempo, la restricción UNIQUE de la tabla lo evita.
-            return res.status(400).json({ error: "El boleto ya no está disponible." });
+            // Se registra el motivo REAL en los logs de Render, para poder diagnosticarlo.
+            console.error('Error real al insertar boleto en Supabase:', errorInsert);
+            return res.status(400).json({ error: "El boleto ya no está disponible.", detalle: errorInsert.message });
         }
 
         await supabase.from('historial').insert({
-            numero, nombre, telefono, ciudad, email, loteria
+            numero, nombre, telefono: telefonoLimpio, ciudad, email, loteria
         });
 
         res.json({
@@ -352,6 +393,18 @@ app.get('/api/admin/ganadores', requireAdmin, async (req, res) => {
     res.json(data);
 });
 
+app.get('/api/admin/comprobante/:numero', requireAdmin, async (req, res) => {
+    const { data, error } = await supabase
+        .from('boletos')
+        .select('comprobante')
+        .eq('numero', req.params.numero)
+        .maybeSingle();
+    if (error || !data || !data.comprobante) {
+        return res.status(404).json({ success: false, error: 'Este boleto no tiene comprobante.' });
+    }
+    res.json({ success: true, comprobante: data.comprobante });
+});
+
 app.post('/api/admin/liberar/:numero', requireAdmin, async (req, res) => {
     const { error } = await supabase.from('boletos').delete().eq('numero', req.params.numero);
     if (error) return res.status(500).json({ success: false, error: 'Error al liberar el boleto.' });
@@ -368,6 +421,26 @@ app.post('/api/pagar/:numero', requireAdmin, async (req, res) => {
     if (error || !data) return res.status(404).json({ success: false });
     res.json({ success: true, boleto: data });
 });
+
+// El comprador sube la foto/captura del comprobante de pago para su boleto reservado.
+app.post('/api/comprobante/:numero', async (req, res) => {
+    const { comprobante } = req.body;
+    if (!comprobante || typeof comprobante !== 'string' || !comprobante.startsWith('data:image')) {
+        return res.status(400).json({ success: false, error: "Adjunta una imagen válida del comprobante." });
+    }
+    const { data, error } = await supabase
+        .from('boletos')
+        .update({ comprobante })
+        .eq('numero', req.params.numero)
+        .eq('estado', 'RESERVADO')
+        .select('numero')
+        .maybeSingle();
+    if (error || !data) {
+        return res.status(404).json({ success: false, error: "Ese boleto ya no está en estado de reserva." });
+    }
+    res.json({ success: true });
+});
+
 
 // Declara ganador: registra en la tabla "ganadores" (permanente, sobrevive al reseteo)
 // y marca el boleto como GANADOR en el tablero actual.
