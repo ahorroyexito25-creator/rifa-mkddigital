@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
+import WebSocket from 'ws';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -35,7 +36,11 @@ app.get('/', (req, res) => {
 if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
     console.error('⚠️  Faltan las variables de entorno SUPABASE_URL y/o SUPABASE_KEY. El servidor no puede funcionar sin ellas.');
 }
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY, {
+    realtime: {
+        transport: WebSocket
+    }
+});
 
 // ============================================================
 // Utilidades de contraseña (hash + salt, sin dependencias nuevas)
