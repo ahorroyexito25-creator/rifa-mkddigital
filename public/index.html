@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rifa MKDdigital 🎟️</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='10' y='10' width='80' height='80' rx='18' fill='%237c3aed'/%3E%3Ccircle cx='32' cy='32' r='8' fill='white'/%3E%3Ccircle cx='68' cy='32' r='8' fill='white'/%3E%3Ccircle cx='50' cy='50' r='8' fill='white'/%3E%3Ccircle cx='32' cy='68' r='8' fill='white'/%3E%3Ccircle cx='68' cy='68' r='8' fill='white'/%3E%3C/svg%3E" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎲</text></svg>">
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -215,6 +217,51 @@
             background-color: #20ba5a;
         }
 
+        .dado-flotante {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #7c3aed, #4c1d95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+            z-index: 999;
+            animation: flotar-dado 3s ease-in-out infinite;
+            user-select: none;
+        }
+        @keyframes flotar-dado {
+            0%, 100% { transform: translateY(0) rotate(-8deg); }
+            50% { transform: translateY(-10px) rotate(8deg); }
+        }
+
+        .dado-flotante {
+            position: fixed;
+            bottom: 25px;
+            left: 25px;
+            background: linear-gradient(145deg, #4f46e5, #7c3aed);
+            color: white;
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+            z-index: 999;
+            text-decoration: none;
+            animation: flotarDado 3s ease-in-out infinite;
+        }
+        @keyframes flotarDado {
+            0%, 100% { transform: translateY(0) rotate(-4deg); }
+            50% { transform: translateY(-8px) rotate(4deg); }
+        }
+
         footer {
             text-align: center;
             padding: 30px 15px;
@@ -267,9 +314,12 @@
 
     <div id="grid-boletos"></div>
 
+    <div class="dado-flotante" title="Rifa MKDdigital">🎲</div>
+
     <a id="whatsappFlotanteBtn" href="#" target="_blank" class="whatsapp-flotante" title="Atención y Soporte por WhatsApp">
         💬
     </a>
+    <div class="dado-flotante" title="Rifa MKDdigital">🎲</div>
 
     <footer>
         <div class="descargo-legal">
@@ -580,13 +630,19 @@
                     if (data.success) {
                         estado.style.color = '#16a34a';
                         estado.textContent = '✅ Comprobante enviado. Espera la confirmación del organizador.';
+                        input.disabled = true;
+                        const boton = document.querySelector(`#estado-comprobante-${numeroBoleto}`).previousElementSibling;
+                        if (boton) { boton.disabled = true; boton.textContent = '✅ Comprobante enviado'; }
+                        alert('✅ ¡Comprobante recibido! El organizador lo va a revisar para confirmar tu pago.');
                     } else {
                         estado.style.color = '#dc2626';
                         estado.textContent = data.error || 'No se pudo enviar el comprobante.';
+                        alert('❌ No se pudo enviar el comprobante: ' + (data.error || 'intenta de nuevo o repórtalo por WhatsApp.'));
                     }
                 } catch (e) {
                     estado.style.color = '#dc2626';
                     estado.textContent = 'Error de conexión al enviar el comprobante.';
+                    alert('❌ Hubo un error de conexión al enviar el comprobante. Intenta de nuevo o repórtalo por WhatsApp.');
                 }
             };
             lector.readAsDataURL(archivo);
