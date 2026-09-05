@@ -394,15 +394,30 @@ app.get('/api/admin/ganadores', requireAdmin, async (req, res) => {
 });
 
 app.get('/api/admin/comprobante/:numero', requireAdmin, async (req, res) => {
-    const { data, error } = await supabase
-        .from('boletos')
-        .select('comprobante')
-        .eq('numero', req.params.numero)
-        .maybeSingle();
-    if (error || !data || !data.comprobante) {
-        return res.status(404).json({ success: false, error: 'Este boleto no tiene comprobante.' });
+    try {
+        const { data, error } = await supabase
+            .from('boletos')
+            .select('comprobante')
+            .eq('numero', req.params.numero)
+            .maybeSingle();
+        if (error || !data || !data.comprobante) {
+            return res.status(404).json({ success: false, error: 'Este boleto no tiene comprobante.' });
+        }
+        // "comprobante" ahora guarda solo la RUTA del archivo en Supabase Storage,
+        // no la foto completa. Generamos un link temporal (10 minutos) para verla.
+        const { data: firmado, error: errorFirma } = await supabase
+            .storage
+            .from('comprobantes')
+            .createSignedUrl(data.comprobante, 60 * 10);
+        if (errorFirma || !firmado) {
+            console.error('Error al generar el link del comprobante:', errorFirma);
+            return res.status(500).json({ success: false, error: 'No se pudo generar el link de la imagen.' });
+        }
+        res.json({ success: true, comprobante: firmado.signedUrl });
+    } catch (e) {
+        console.error('Error inesperado al leer el comprobante:', e);
+        res.status(500).json({ success: false, error: 'Error de servidor al leer el comprobante.' });
     }
-    res.json({ success: true, comprobante: data.comprobante });
 });
 
 app.post('/api/admin/liberar/:numero', requireAdmin, async (req, res) => {
@@ -423,22 +438,60 @@ app.post('/api/pagar/:numero', requireAdmin, async (req, res) => {
 });
 
 // El comprador sube la foto/captura del comprobante de pago para su boleto reservado.
+// La foto se guarda en Supabase Storage (no en la tabla), así no hay límite de tamaño.
 app.post('/api/comprobante/:numero', async (req, res) => {
-    const { comprobante } = req.body;
-    if (!comprobante || typeof comprobante !== 'string' || !comprobante.startsWith('data:image')) {
-        return res.status(400).json({ success: false, error: "Adjunta una imagen válida del comprobante." });
+    try {
+        const { comprobante } = req.body;
+        if (!comprobante || typeof comprobante !== 'string' || !comprobante.startsWith('data:image')) {
+            return res.status(400).json({ success: false, error: "Adjunta una imagen válida del comprobante." });
+        }
+
+        const numero = req.params.numero;
+
+        // Separar el encabezado "data:image/jpeg;base64," del contenido real de la foto.
+        const coincidencia = comprobante.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+        if (!coincidencia) {
+            return res.status(400).json({ success: false, error: "El formato de la imagen no es válido." });
+        }
+        const tipoMime = coincidencia[1];
+        const datosBase64 = coincidencia[2];
+        const buffer = Buffer.from(datosBase64, 'base64');
+
+        if (buffer.length > 8 * 1024 * 1024) {
+            return res.status(400).json({ success: false, error: "La imagen es muy pesada (máximo 8MB)." });
+        }
+
+        const extension = tipoMime.split('/')[1] || 'jpg';
+        const rutaArchivo = `${numero}-${Date.now()}.${extension}`;
+
+        const { error: errorSubida } = await supabase
+            .storage
+            .from('comprobantes')
+            .upload(rutaArchivo, buffer, { contentType: tipoMime, upsert: true });
+
+        if (errorSubida) {
+            console.error('Error real al subir el comprobante a Supabase Storage:', errorSubida);
+            return res.status(500).json({ success: false, error: "No se pudo guardar la imagen. Intenta de nuevo." });
+        }
+
+        const { data, error: errorUpdate } = await supabase
+            .from('boletos')
+            .update({ comprobante: rutaArchivo })
+            .eq('numero', numero)
+            .eq('estado', 'RESERVADO')
+            .select('numero')
+            .maybeSingle();
+
+        if (errorUpdate || !data) {
+            console.error('Error real al guardar la referencia del comprobante en boletos:', errorUpdate);
+            return res.status(404).json({ success: false, error: "Ese boleto ya no está en estado de reserva." });
+        }
+
+        res.json({ success: true });
+    } catch (e) {
+        console.error('Error inesperado al subir el comprobante:', e);
+        res.status(500).json({ success: false, error: "Error de servidor al subir el comprobante." });
     }
-    const { data, error } = await supabase
-        .from('boletos')
-        .update({ comprobante })
-        .eq('numero', req.params.numero)
-        .eq('estado', 'RESERVADO')
-        .select('numero')
-        .maybeSingle();
-    if (error || !data) {
-        return res.status(404).json({ success: false, error: "Ese boleto ya no está en estado de reserva." });
-    }
-    res.json({ success: true });
 });
 
 
